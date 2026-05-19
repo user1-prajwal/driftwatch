@@ -1,34 +1,30 @@
 import pandas as pd
-from scipy import stats
+from google import genai
+from dotenv import load_dotenv
+import os
 
-# ──────────────────────────────────────────────
-# STEP 1: Load your data
-# ──────────────────────────────────────────────
+# Load Gemini API key from .env file
+
+load_dotenv()
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+# 1. Load any CSV file
 
 def load_data(filepath):
-    """Load CSV into a pandas DataFrame."""
     df = pd.read_csv(filepath)
     print(f"✅ Loaded {len(df)} rows, {len(df.columns)} columns")
-    print(f"   Columns: {list(df.columns)}\n")
+    print(f"   Columns found: {list(df.columns)}\n")
     return df
 
 
-# ──────────────────────────────────────────────
-# STEP 2: Build a baseline from historical data
-# (everything except the last row)
-# ──────────────────────────────────────────────
+# 2. Learn what NORMAL looks like for any column
 
 def build_baseline(df, column):
-    """
-    Compute 'normal' statistics for a column.
-    We use all rows EXCEPT the last one as history.
-    In a real system, you'd define a time window (e.g. last 30 days).
-    """
-    history = df[column][:-1]  # all rows except today
+    history = df[column][:-1]  # everything except last row
 
     baseline = {
         "column":   column,
-        "count":    len(history),
         "mean":     round(history.mean(), 2),
         "std":      round(history.std(), 2),
         "min":      round(history.min(), 2),
@@ -37,38 +33,23 @@ def build_baseline(df, column):
         "null_pct": round(history.isnull().mean() * 100, 2),
     }
 
-    print(f"📊 Baseline for '{column}':")
-    for key, val in baseline.items():
-        print(f"   {key}: {val}")
-    print()
+    print(f"📊 Normal range for '{column}':")
+    print(f"   Average : {baseline['mean']}")
+    print(f"   Std Dev : {baseline['std']}")
+    print(f"   Min-Max : {baseline['min']} to {baseline['max']}\n")
 
     return baseline
 
 
-# ──────────────────────────────────────────────
-# STEP 3: Check today's value against baseline
-# ──────────────────────────────────────────────
+# 3. Check if latest value is suspicious
+
 
 def detect_drift(df, column, baseline):
-    """
-    Compare the latest value to the baseline.
-    Uses Z-score: how many standard deviations away is today's value?
+    today_value = df[column].iloc[-1]  # last row = latest data
 
-    Z-score interpretation:
-      |Z| < 2  → normal (green)
-      |Z| 2–3  → warning (yellow)
-      |Z| > 3  → critical anomaly (red)
-    """
-    today_value = df[column].iloc[-1]  # last row = today
-
-    z_score = (today_value - baseline["mean"]) / baseline["std"]
-    z_score = round(z_score, 2)
-
-    # Convert Z-score to a 0–100 severity score
-    # Z=0 → severity 0, Z=±3 → severity ~75, Z=±9 → severity ~97
+    z_score  = round((today_value - baseline["mean"]) / baseline["std"], 2)
     severity = round(min(abs(z_score) / 10 * 100, 100), 1)
 
-    # Determine status
     if abs(z_score) < 2:
         status = "🟢 NORMAL"
     elif abs(z_score) < 3:
@@ -77,77 +58,91 @@ def detect_drift(df, column, baseline):
         status = "🔴 CRITICAL"
 
     result = {
-        "column":      column,
-        "today_value": today_value,
+        "column":        column,
+        "today_value":   today_value,
         "baseline_mean": baseline["mean"],
         "baseline_std":  baseline["std"],
-        "z_score":     z_score,
-        "severity":    severity,
-        "status":      status,
+        "z_score":       z_score,
+        "severity":      severity,
+        "status":        status,
     }
 
     print(f"🔍 Drift check for '{column}':")
-    print(f"   Today's value : {today_value}")
-    print(f"   Baseline mean : {baseline['mean']} ± {baseline['std']}")
+    print(f"   Latest value  : {today_value}")
+    print(f"   Normal average: {baseline['mean']} +/- {baseline['std']}")
     print(f"   Z-score       : {z_score}")
-    print(f"   Severity      : {severity}/100")
-    print(f"   Status        : {status}")
-    print()
+    print(f"   Severity      : {severity} / 100")
+    print(f"   Status        : {status}\n")
 
     return result
 
 
-# ──────────────────────────────────────────────
-# STEP 4: Build explanation prompt for Gemini
-# (We won't call the API yet — just print the prompt)
-# ──────────────────────────────────────────────
 
-def build_explanation_prompt(result):
-    """
-    Constructs the prompt we'll send to Gemini API later.
-    For now, just prints it so you can see what it looks like.
-    """
+# 4. Ask Gemini WHY this anomaly happened
+
+
+def explain_with_gemini(result, context):
     prompt = f"""
-You are a data quality analyst. A monitoring system has detected an anomaly.
+You are a data quality analyst reviewing an anomaly alert.
 
-Column: {result['column']}
-Today's value: {result['today_value']}
-Normal baseline: mean = {result['baseline_mean']}, std = {result['baseline_std']}
-Z-score: {result['z_score']} (anything above 3 is a critical anomaly)
-Severity score: {result['severity']} / 100
+The data being monitored: {context}
 
-In 2-3 sentences, explain:
-1. What the anomaly means in plain English
-2. What could have caused it (give 2-3 possible reasons)
-3. What action should be taken
+Anomaly details:
+- Column name   : {result['column']}
+- Latest value  : {result['today_value']}
+- Normal average: {result['baseline_mean']} (+/- {result['baseline_std']})
+- Z-score       : {result['z_score']}
+- Severity      : {result['severity']} / 100
+- Status        : {result['status']}
 
-Keep it short, clear, and non-technical.
+Respond in exactly this format:
+
+WHAT HAPPENED:
+(1 sentence, plain English, no jargon)
+
+POSSIBLE CAUSES:
+1. (reason one)
+2. (reason two)
+3. (reason three)
+
+RECOMMENDED ACTION:
+(1 sentence on what to do next)
     """.strip()
 
-    print("📝 Gemini prompt (will be sent to API in next step):")
-    print("-" * 50)
-    print(prompt)
-    print("-" * 50)
+    print("🤖 Asking Gemini to explain...\n")
 
-    return prompt
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+        print("=" * 55)
+        print("💡 GEMINI EXPLANATION")
+        print("=" * 55)
+        print(response.text)
+        print("=" * 55)
+        return response.text
+
+    except Exception as e:
+        print(f"❌ Gemini error: {e}")
+        print("   Double check your GEMINI_API_KEY in the .env file")
+        return None
 
 
-# ──────────────────────────────────────────────
-# RUN EVERYTHING
-# ──────────────────────────────────────────────
+# RUN — only change these 3 lines for any project
+
 
 if __name__ == "__main__":
-    # 1. Load data
-    df = load_data("data/attendance.csv")
 
-    # 2. Build baseline for the teachers_present column
-    baseline = build_baseline(df, "teachers_present")
+    FILE    = "data/attendance.csv"       # your CSV file path
+    COLUMN  = "teachers_present"          # column to monitor
+    CONTEXT = "daily count of something"  # describe your data here
 
-    # 3. Detect drift in today's value
-    result = detect_drift(df, "teachers_present", baseline)
+    df       = load_data(FILE)
+    baseline = build_baseline(df, COLUMN)
+    result   = detect_drift(df, COLUMN, baseline)
 
-    # 4. See the prompt that will go to Gemini
-    if result["severity"] > 30:  # only explain if significant
-        build_explanation_prompt(result)
+    if result["severity"] > 30:
+        explain_with_gemini(result, context=CONTEXT)
     else:
-        print("✅ No significant drift. No explanation needed.")
+        print("✅ Everything looks normal. No explanation needed.")
