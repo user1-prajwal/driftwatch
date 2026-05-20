@@ -8,7 +8,7 @@ import os
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-GEMINI_MODEL = "gemini-1.5-flash-latest"  # change if needed
+GEMINI_MODEL = "gemini-2.5-flash"  # change if needed
 
 
 # Sensitivity map — user picks plain English,
