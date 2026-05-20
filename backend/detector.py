@@ -269,7 +269,10 @@ def run_driftwatch(filepath, date_column, context,
         results.append(result)
 
         if result["severity"] > 30:
-            explain_with_gemini(result, context)
+            explanation = explain_with_gemini(result, context)
+            result["gemini_explanation"] = explanation
+        else:
+            result["gemini_explanation"] = None
 
     # Summary
     print("─" * 55)
