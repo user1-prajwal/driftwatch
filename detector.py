@@ -55,15 +55,15 @@ def check_numeric_column(df, column):
     print(f"   Severity      : {severity} / 100  {status}\n")
 
     return {
-        "type":          "numeric",
-        "column":        column,
-        "today_value":   today_value,
-        "baseline_mean": mean,
-        "baseline_std":  std,
-        "z_score":       z_score,
-        "severity":      severity,
-        "status":        status,
-    }
+    "type":          "numeric",
+    "column":        column,
+    "today_value":   float(today_value),
+    "baseline_mean": float(mean),
+    "baseline_std":  float(std),
+    "z_score":       float(z_score),
+    "severity":      float(severity),
+    "status":        status,
+}
 
 
 # SECTION 3 — CATEGORICAL DRIFT (CHI-SQUARE)
@@ -111,15 +111,15 @@ def check_category_column(df, date_column, category_column):
     print(f"   Severity : {severity} / 100  {status}\n")
 
     return {
-        "type":         "categorical",
-        "column":       category_column,
-        "chi2":         round(chi2, 2),
-        "p_value":      round(p_value, 6),
-        "severity":     severity,
-        "status":       status,
-        "baseline_pct": baseline_pct.to_dict(),
-        "today_pct":    today_pct.to_dict(),
-    }
+    "type":         "categorical",
+    "column":       category_column,
+    "chi2":         float(round(chi2, 2)),
+    "p_value":      float(round(p_value, 6)),
+    "severity":     float(severity),
+    "status":       status,
+    "baseline_pct": {k: float(v) for k, v in baseline_pct.to_dict().items()},
+    "today_pct":    {k: float(v) for k, v in today_pct.to_dict().items()},
+}
 
 
 # SECTION 4 — GEMINI EXPLANATION
