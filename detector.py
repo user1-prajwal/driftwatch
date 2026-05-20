@@ -4,19 +4,15 @@ from google import genai
 from dotenv import load_dotenv
 import os
 
-# ──────────────────────────────────────────────
 # Load Gemini API key
-# ──────────────────────────────────────────────
 
 load_dotenv()
 client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 GEMINI_MODEL = "gemini-1.5-flash-latest"  # change if needed
 
 
-# ──────────────────────────────────────────────
 # Sensitivity map — user picks plain English,
 # we convert to Z-score thresholds internally
-# ──────────────────────────────────────────────
 
 SENSITIVITY_MAP = {
     "low":    {"warning": 3.0, "critical": 5.0},
@@ -37,9 +33,7 @@ def get_thresholds(sensitivity: str):
     return SENSITIVITY_MAP[sensitivity]
 
 
-# ══════════════════════════════════════════════
 # SECTION 1 — DATA LOADING
-# ══════════════════════════════════════════════
 
 def load_data(filepath):
     df = pd.read_csv(filepath)
@@ -48,9 +42,7 @@ def load_data(filepath):
     return df
 
 
-# ══════════════════════════════════════════════
 # SECTION 2 — NUMERIC DRIFT (Z-SCORE)
-# ══════════════════════════════════════════════
 
 def check_numeric_column(df, column, thresholds):
     """
@@ -96,9 +88,7 @@ def check_numeric_column(df, column, thresholds):
     }
 
 
-# ══════════════════════════════════════════════
 # SECTION 3 — CATEGORICAL DRIFT (CHI-SQUARE)
-# ══════════════════════════════════════════════
 
 def check_category_column(df, date_column, category_column, thresholds):
     """
@@ -172,9 +162,7 @@ def check_category_column(df, date_column, category_column, thresholds):
     }
 
 
-# ══════════════════════════════════════════════
 # SECTION 4 — GEMINI EXPLANATION
-# ══════════════════════════════════════════════
 
 def explain_with_gemini(result, context):
     if result["type"] == "numeric":
@@ -237,9 +225,7 @@ RECOMMENDED ACTION:
         return None
 
 
-# ══════════════════════════════════════════════
 # SECTION 5 — MAIN RUNNER
-# ══════════════════════════════════════════════
 
 def run_driftwatch(filepath, date_column, context,
                    sensitivity="medium", skip_columns=None):
@@ -306,9 +292,7 @@ def run_driftwatch(filepath, date_column, context,
     return results
 
 
-# ══════════════════════════════════════════════
 # RUN — only change these lines
-# ══════════════════════════════════════════════
 
 if __name__ == "__main__":
     run_driftwatch(
