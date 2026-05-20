@@ -127,3 +127,31 @@ async def scan_file(
         if os.path.exists(temp_path):
             os.remove(temp_path)
  
+
+# ROUTE 3 — Get all past scan results
+# GET: http://localhost:8000/results
+ 
+@app.get("/results")
+def get_all_results():
+    """
+    Returns all scans done in this session.
+    React dashboard uses this to show history.
+    """
+    if not scan_results:
+        return {
+            "message": "No scans yet. Upload a CSV to /scan first.",
+            "scans": []
+        }
+ 
+    # Return most recent first
+    sorted_scans = sorted(
+        scan_results.values(),
+        key=lambda x: x["scanned_at"],
+        reverse=True
+    )
+ 
+    return {
+        "total_scans": len(sorted_scans),
+        "scans": sorted_scans
+    }
+ 
