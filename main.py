@@ -49,3 +49,81 @@ def health_check():
         "timestamp": datetime.now().isoformat()
     }
 
+ 
+# ROUTE 2 — Scan a CSV file
+# POST: http://localhost:8000/scan
+#
+# Accepts:
+#   - file       → the CSV file to scan
+#   - date_column→ which column has the date
+#   - context    → plain English description of data
+ 
+@app.post("/scan")
+async def scan_file(
+    file: UploadFile = File(...),
+    date_column: str = Form(...),
+    context: str     = Form(...)
+):
+    """
+    Main endpoint. Upload a CSV, get drift analysis back.
+    """
+ 
+    # 1. Validate file is a CSV
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only CSV files are supported right now."
+        )
+ 
+    # 2. Save uploaded file temporarily
+    temp_path = f"data/temp_{file.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+ 
+    try:
+        # 3. Run DriftWatch detector on the file
+        results = run_driftwatch(
+            filepath    = temp_path,
+            date_column = date_column,
+            context     = context
+        )
+ 
+        # 4. Build a clean response
+        scan_id = str(uuid.uuid4())[:8]   # short unique ID like "a3f9b2c1"
+ 
+        critical = [r for r in results if "CRITICAL" in r["status"]]
+        warnings = [r for r in results if "WARNING"  in r["status"]]
+        normal   = [r for r in results if "NORMAL"   in r["status"]]
+ 
+        response = {
+            "scan_id":    scan_id,
+            "filename":   file.filename,
+            "context":    context,
+            "scanned_at": datetime.now().isoformat(),
+            "summary": {
+                "total_columns": len(results),
+                "critical":      len(critical),
+                "warnings":      len(warnings),
+                "normal":        len(normal),
+                "overall_status": (
+                    "CRITICAL" if critical else
+                    "WARNING"  if warnings else
+                    "NORMAL"
+                )
+            },
+            "columns": results   # full per-column results
+        }
+ 
+        # 5. Store in memory so /results can return it later
+        scan_results[scan_id] = response
+ 
+        return response
+ 
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+ 
+    finally:
+        # 6. Clean up temp file
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+ 
