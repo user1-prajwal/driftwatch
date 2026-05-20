@@ -172,4 +172,37 @@ def get_one_result(scan_id: str):
         )
  
     return scan_results[scan_id]
+
+
+ 
+# ROUTE 5 — List available columns in a CSV
+# POST: http://localhost:8000/columns
+#
+# Useful so React can show a dropdown of column names
+# before the user picks the date_column
+ 
+@app.post("/columns")
+async def get_columns(file: UploadFile = File(...)):
+    """
+    Upload a CSV, get back its column names.
+    React uses this to show a dropdown for date_column selection.
+    """
+    if not file.filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files supported.")
+ 
+    temp_path = f"data/temp_cols_{file.filename}"
+    with open(temp_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+ 
+    try:
+        df = pd.read_csv(temp_path)
+        return {
+            "filename": file.filename,
+            "columns":  list(df.columns),
+            "rows":     len(df)
+        }
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
  
