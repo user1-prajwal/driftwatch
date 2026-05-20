@@ -155,3 +155,21 @@ def get_all_results():
         "scans": sorted_scans
     }
  
+
+# ROUTE 4 — Get one specific scan result
+# GET: http://localhost:8000/results/{scan_id}
+ 
+@app.get("/results/{scan_id}")
+def get_one_result(scan_id: str):
+    """
+    Returns details of one specific scan.
+    React dashboard uses this when you click on a scan.
+    """
+    if scan_id not in scan_results:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Scan '{scan_id}' not found."
+        )
+ 
+    return scan_results[scan_id]
+ 
