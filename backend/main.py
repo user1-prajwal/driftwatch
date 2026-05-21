@@ -1,6 +1,5 @@
 import os
 import uuid
-import json
 import shutil
 from datetime import datetime
 
@@ -9,6 +8,7 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from detector import run_driftwatch
+from alerts import send_email_alert
 
 # Create FastAPI app
 
@@ -18,71 +18,48 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS — allows React frontend to talk to this API
-# (without this, browser will block the requests)
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # in production, replace * with your frontend URL
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # In-memory storage for scan results
-# (we'll move this to a database later)
-
-scan_results = {}   # { scan_id: result_data }
+scan_results = {}
 
 
 # ROUTE 1 — Health check
-# Visit: http://localhost:8000/health
 
 @app.get("/health")
 def health_check():
-    """
-    Simple check to confirm API is running.
-    React dashboard calls this on startup.
-    """
     return {
-        "status": "ok",
-        "message": "DriftWatch is running",
+        "status":    "ok",
+        "message":   "DriftWatch is running",
         "timestamp": datetime.now().isoformat()
     }
 
- 
+
 # ROUTE 2 — Scan a CSV file
-# POST: http://localhost:8000/scan
-#
-# Accepts:
-#   - file       → the CSV file to scan
-#   - date_column→ which column has the date
-#   - context    → plain English description of data
-# -sensitivity  ->low,medium.high
- 
+
 @app.post("/scan")
 async def scan_file(
-    file:        UploadFile = File(...),
-    date_column: str        = Form(...),
-    context:     str        = Form(...),
-    sensitivity: str        = Form("medium")  # default = medium
+    file:             UploadFile = File(...),
+    date_column:      str        = Form(...),
+    context:          str        = Form(...),
+    sensitivity:      str        = Form("medium"),
+    recipient_email:  str        = Form("")        # optional — empty means no email
 ):
     if not file.filename.endswith(".csv"):
-        raise HTTPException(
-            status_code=400,
-            detail="Only CSV files are supported."
-        )
- 
-    # Validate sensitivity value
+        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+
     if sensitivity not in ["low", "medium", "high"]:
-        raise HTTPException(
-            status_code=400,
-            detail="sensitivity must be 'low', 'medium', or 'high'."
-        )
- 
+        raise HTTPException(status_code=400, detail="sensitivity must be 'low', 'medium', or 'high'.")
+
     temp_path = f"data/temp_{file.filename}"
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
- 
+
     try:
         results = run_driftwatch(
             filepath    = temp_path,
@@ -90,12 +67,12 @@ async def scan_file(
             context     = context,
             sensitivity = sensitivity
         )
- 
+
         scan_id  = str(uuid.uuid4())[:8]
         critical = [r for r in results if "CRITICAL" in r["status"]]
         warnings = [r for r in results if "WARNING"  in r["status"]]
         normal   = [r for r in results if "NORMAL"   in r["status"]]
- 
+
         response = {
             "scan_id":     scan_id,
             "filename":    file.filename,
@@ -113,87 +90,61 @@ async def scan_file(
                     "NORMAL"
                 )
             },
-            "columns": results
+            "columns": results,
+            "email_alert": None
         }
- 
+
+        # Send email alert if recipient provided
+        if recipient_email.strip():
+            email_result = send_email_alert(recipient_email.strip(), response)
+            response["email_alert"] = email_result
+
         scan_results[scan_id] = response
         return response
- 
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
- 
+
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
- 
- 
+
 
 # ROUTE 3 — Get all past scan results
-# GET: http://localhost:8000/results
- 
+
 @app.get("/results")
 def get_all_results():
-    """
-    Returns all scans done in this session.
-    React dashboard uses this to show history.
-    """
     if not scan_results:
-        return {
-            "message": "No scans yet. Upload a CSV to /scan first.",
-            "scans": []
-        }
- 
-    # Return most recent first
+        return {"message": "No scans yet.", "scans": []}
+
     sorted_scans = sorted(
         scan_results.values(),
         key=lambda x: x["scanned_at"],
         reverse=True
     )
- 
-    return {
-        "total_scans": len(sorted_scans),
-        "scans": sorted_scans
-    }
- 
+    return {"total_scans": len(sorted_scans), "scans": sorted_scans}
+
 
 # ROUTE 4 — Get one specific scan result
-# GET: http://localhost:8000/results/{scan_id}
- 
+
 @app.get("/results/{scan_id}")
 def get_one_result(scan_id: str):
-    """
-    Returns details of one specific scan.
-    React dashboard uses this when you click on a scan.
-    """
     if scan_id not in scan_results:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Scan '{scan_id}' not found."
-        )
- 
+        raise HTTPException(status_code=404, detail=f"Scan '{scan_id}' not found.")
     return scan_results[scan_id]
 
 
- 
-# ROUTE 5 — List available columns in a CSV
-# POST: http://localhost:8000/columns
-#
-# Useful so React can show a dropdown of column names
-# before the user picks the date_column
- 
+# ROUTE 5 — List columns in a CSV
+
 @app.post("/columns")
 async def get_columns(file: UploadFile = File(...)):
-    """
-    Upload a CSV, get back its column names.
-    React uses this to show a dropdown for date_column selection.
-    """
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files supported.")
- 
+
     temp_path = f"data/temp_cols_{file.filename}"
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
- 
+
     try:
         df = pd.read_csv(temp_path)
         return {
@@ -204,5 +155,3 @@ async def get_columns(file: UploadFile = File(...)):
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
-
- 
