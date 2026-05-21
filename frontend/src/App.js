@@ -23,7 +23,7 @@ const severityColor = (severity) => {
 };
 
 
-// Small reusable components
+// Badge component
 
 function Badge({ status }) {
   return (
@@ -40,6 +40,9 @@ function Badge({ status }) {
     </span>
   );
 }
+
+
+// Severity bar
 
 function SeverityBar({ severity }) {
   return (
@@ -60,6 +63,9 @@ function SeverityBar({ severity }) {
     </div>
   );
 }
+
+
+// Sensitivity picker
 
 function SensitivityPicker({ value, onChange }) {
   const options = [
@@ -100,22 +106,19 @@ function SensitivityPicker({ value, onChange }) {
 function ColumnCard({ col }) {
   const [open, setOpen] = useState(col.status?.includes("CRITICAL"));
 
-  // Parse Gemini explanation text into sections
   const parseExplanation = (text) => {
     if (!text) return null;
     const sections = {};
-    const whatMatch    = text.match(/WHAT HAPPENED:\n([\s\S]*?)(?=\nPOSSIBLE CAUSES:|$)/);
-    const causesMatch  = text.match(/POSSIBLE CAUSES:\n([\s\S]*?)(?=\nRECOMMENDED ACTION:|$)/);
-    const actionMatch  = text.match(/RECOMMENDED ACTION:\n([\s\S]*?)$/);
+    const whatMatch   = text.match(/WHAT HAPPENED:\n([\s\S]*?)(?=\nPOSSIBLE CAUSES:|$)/);
+    const causesMatch = text.match(/POSSIBLE CAUSES:\n([\s\S]*?)(?=\nRECOMMENDED ACTION:|$)/);
+    const actionMatch = text.match(/RECOMMENDED ACTION:\n([\s\S]*?)$/);
     if (whatMatch)   sections.what   = whatMatch[1].trim();
     if (causesMatch) sections.causes = causesMatch[1].trim().split("\n").filter(Boolean);
     if (actionMatch) sections.action = actionMatch[1].trim();
     return sections;
   };
 
-  const explanation = col.gemini_explanation
-    ? parseExplanation(col.gemini_explanation)
-    : null;
+  const explanation = col.gemini_explanation ? parseExplanation(col.gemini_explanation) : null;
 
   return (
     <div style={{
@@ -126,21 +129,12 @@ function ColumnCard({ col }) {
       overflow:     "hidden",
       boxShadow:    "0 1px 4px rgba(0,0,0,0.06)",
     }}>
-      {/* Header row */}
       <div
         onClick={() => setOpen(!open)}
-        style={{
-          display:    "flex",
-          alignItems: "center",
-          padding:    "14px 18px",
-          cursor:     "pointer",
-          gap:        12,
-        }}
+        style={{ display: "flex", alignItems: "center", padding: "14px 18px", cursor: "pointer", gap: 12 }}
       >
         <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 600, fontSize: 15, color: "#111827" }}>
-            {col.column}
-          </div>
+          <div style={{ fontWeight: 600, fontSize: 15, color: "#111827" }}>{col.column}</div>
           <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
             {col.type === "numeric"
               ? `Latest: ${col.today_value}  ·  Normal avg: ${col.baseline_mean}`
@@ -151,30 +145,18 @@ function ColumnCard({ col }) {
         <span style={{ color: "#9ca3af", fontSize: 13 }}>{open ? "▲" : "▼"}</span>
       </div>
 
-      {/* Expanded detail */}
       {open && (
         <div style={{ padding: "0 18px 16px", borderTop: "1px solid #f3f4f6" }}>
           <SeverityBar severity={col.severity} />
 
-          {/* Numeric detail */}
           {col.type === "numeric" && (
-            <div style={{
-              display:       "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gap:           8,
-              marginTop:     14,
-            }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 14 }}>
               {[
                 { label: "Latest value",   value: col.today_value },
                 { label: "Normal average", value: col.baseline_mean },
                 { label: "Std deviation",  value: col.baseline_std },
               ].map(item => (
-                <div key={item.label} style={{
-                  background:   "#f9fafb",
-                  borderRadius: 8,
-                  padding:      "10px 12px",
-                  textAlign:    "center",
-                }}>
+                <div key={item.label} style={{ background: "#f9fafb", borderRadius: 8, padding: "10px 12px", textAlign: "center" }}>
                   <div style={{ fontSize: 11, color: "#9ca3af" }}>{item.label}</div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: "#111827", marginTop: 2 }}>{item.value}</div>
                 </div>
@@ -182,7 +164,6 @@ function ColumnCard({ col }) {
             </div>
           )}
 
-          {/* Categorical distribution */}
           {col.type === "categorical" && (
             <div style={{ marginTop: 14 }}>
               <div style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>Distribution comparison</div>
@@ -193,40 +174,24 @@ function ColumnCard({ col }) {
                     <span>
                       <span style={{ color: "#6b7280" }}>normal {col.baseline_pct[cat]}%</span>
                       {" → "}
-                      <span style={{ fontWeight: 600, color: statusColor(col.status) }}>
-                        today {col.today_pct?.[cat] ?? 0}%
-                      </span>
+                      <span style={{ fontWeight: 600, color: statusColor(col.status) }}>today {col.today_pct?.[cat] ?? 0}%</span>
                     </span>
                   </div>
                   <div style={{ background: "#e5e7eb", borderRadius: 999, height: 5 }}>
-                    <div style={{
-                      width:      `${col.today_pct?.[cat] ?? 0}%`,
-                      background: statusColor(col.status),
-                      borderRadius: 999,
-                      height:     5,
-                    }} />
+                    <div style={{ width: `${col.today_pct?.[cat] ?? 0}%`, background: statusColor(col.status), borderRadius: 999, height: 5 }} />
                   </div>
                 </div>
               ))}
             </div>
           )}
 
-          {/* Gemini explanation */}
           {explanation && (
-            <div style={{
-              marginTop:    14,
-              background:   "#fafafa",
-              border:       "1px solid #e5e7eb",
-              borderRadius: 10,
-              padding:      "12px 14px",
-            }}>
+            <div style={{ marginTop: 14, background: "#fafafa", border: "1px solid #e5e7eb", borderRadius: 10, padding: "12px 14px" }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "#6366f1", marginBottom: 8, letterSpacing: "0.05em" }}>
                 💡 AI EXPLANATION
               </div>
               {explanation.what && (
-                <p style={{ fontSize: 13, color: "#374151", marginBottom: 10, lineHeight: 1.6 }}>
-                  {explanation.what}
-                </p>
+                <p style={{ fontSize: 13, color: "#374151", marginBottom: 10, lineHeight: 1.6 }}>{explanation.what}</p>
               )}
               {explanation.causes && (
                 <div style={{ marginBottom: 10 }}>
@@ -239,20 +204,13 @@ function ColumnCard({ col }) {
                 </div>
               )}
               {explanation.action && (
-                <div style={{
-                  background:   "#eef2ff",
-                  borderRadius: 8,
-                  padding:      "8px 12px",
-                  fontSize:     13,
-                  color:        "#4f46e5",
-                }}>
+                <div style={{ background: "#eef2ff", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#4f46e5" }}>
                   <strong>Action:</strong> {explanation.action}
                 </div>
               )}
             </div>
           )}
 
-          {/* No explanation — severity too low */}
           {!explanation && col.severity <= 30 && (
             <div style={{ marginTop: 12, fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>
               No anomaly explanation needed — values are within normal range.
@@ -265,38 +223,27 @@ function ColumnCard({ col }) {
 }
 
 
-// Summary bar at top of results
+// Summary bar
 
 function SummaryBar({ summary }) {
   const overall = summary.overall_status;
   return (
-    <div style={{
-      display:      "flex",
-      gap:          12,
-      marginBottom: 20,
-      flexWrap:     "wrap",
-    }}>
+    <div style={{ display: "flex", gap: 12, marginBottom: 20, flexWrap: "wrap" }}>
       {[
-        { label: "Overall",  value: overall,            color: statusColor("🔴 " + overall) },
-        { label: "Critical", value: summary.critical,   color: "#ef4444" },
-        { label: "Warning",  value: summary.warnings,   color: "#f59e0b" },
-        { label: "Normal",   value: summary.normal,     color: "#22c55e" },
+        { label: "Overall",  value: overall,               color: statusColor("🔴 " + overall) },
+        { label: "Critical", value: summary.critical,      color: "#ef4444" },
+        { label: "Warning",  value: summary.warnings,      color: "#f59e0b" },
+        { label: "Normal",   value: summary.normal,        color: "#22c55e" },
         { label: "Columns",  value: summary.total_columns, color: "#6366f1" },
       ].map(item => (
         <div key={item.label} style={{
-          flex:         1,
-          minWidth:     80,
-          background:   "#fff",
-          border:       "1.5px solid #e5e7eb",
-          borderRadius: 10,
-          padding:      "12px 14px",
-          textAlign:    "center",
-          boxShadow:    "0 1px 3px rgba(0,0,0,0.05)",
+          flex: 1, minWidth: 80,
+          background: "#fff", border: "1.5px solid #e5e7eb",
+          borderRadius: 10, padding: "12px 14px", textAlign: "center",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
         }}>
           <div style={{ fontSize: 11, color: "#9ca3af" }}>{item.label}</div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: item.color, marginTop: 2 }}>
-            {item.value}
-          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: item.color, marginTop: 2 }}>{item.value}</div>
         </div>
       ))}
     </div>
@@ -307,24 +254,23 @@ function SummaryBar({ summary }) {
 // Main App
 
 export default function App() {
-  const [file,        setFile]        = useState(null);
-  const [columns,     setColumns]     = useState([]);
-  const [dateColumn,  setDateColumn]  = useState("");
-  const [context,     setContext]     = useState("");
-  const [sensitivity, setSensitivity] = useState("medium");
-  const [loading,     setLoading]     = useState(false);
-  const [result,      setResult]      = useState(null);
-  const [error,       setError]       = useState("");
-  const [apiOk,       setApiOk]       = useState(null);
+  const [file,           setFile]           = useState(null);
+  const [columns,        setColumns]        = useState([]);
+  const [dateColumn,     setDateColumn]     = useState("");
+  const [context,        setContext]        = useState("");
+  const [sensitivity,    setSensitivity]    = useState("medium");
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [loading,        setLoading]        = useState(false);
+  const [result,         setResult]         = useState(null);
+  const [error,          setError]          = useState("");
+  const [apiOk,          setApiOk]          = useState(null);
 
-  // Check if backend is running on startup
   useEffect(() => {
     axios.get(`${API}/health`)
       .then(() => setApiOk(true))
       .catch(() => setApiOk(false));
   }, []);
 
-  // When user picks a file → fetch its columns for dropdown
   const handleFileChange = async (e) => {
     const f = e.target.files[0];
     if (!f) return;
@@ -339,7 +285,6 @@ export default function App() {
     try {
       const res = await axios.post(`${API}/columns`, form);
       setColumns(res.data.columns);
-      // Auto-select first column that looks like a date
       const dateGuess = res.data.columns.find(c =>
         c.toLowerCase().includes("date") || c.toLowerCase().includes("time")
       );
@@ -349,21 +294,21 @@ export default function App() {
     }
   };
 
-  // Scan the file
   const handleScan = async () => {
-    if (!file)        return setError("Please upload a CSV file.");
-    if (!dateColumn)  return setError("Please select the date column.");
-    if (!context)     return setError("Please describe your data.");
+    if (!file)       return setError("Please upload a CSV file.");
+    if (!dateColumn) return setError("Please select the date column.");
+    if (!context)    return setError("Please describe your data.");
 
     setLoading(true);
     setError("");
     setResult(null);
 
     const form = new FormData();
-    form.append("file",        file);
-    form.append("date_column", dateColumn);
-    form.append("context",     context);
-    form.append("sensitivity", sensitivity);
+    form.append("file",             file);
+    form.append("date_column",      dateColumn);
+    form.append("context",          context);
+    form.append("sensitivity",      sensitivity);
+    form.append("recipient_email",  recipientEmail);
 
     try {
       const res = await axios.post(`${API}/scan`, form);
@@ -375,33 +320,31 @@ export default function App() {
     }
   };
 
+  // Input style reused across fields
+  const inputStyle = {
+    width: "100%", padding: "10px 12px",
+    border: "1.5px solid #e5e7eb", borderRadius: 8,
+    fontSize: 13, outline: "none", boxSizing: "border-box",
+    background: "#fff",
+  };
+
+  const labelStyle = {
+    fontSize: 13, color: "#374151",
+    fontWeight: 500, display: "block", marginBottom: 6,
+  };
+
   return (
-    <div style={{
-      minHeight:   "100vh",
-      background:  "#f8fafc",
-      fontFamily:  "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    }}>
+    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
 
       {/* Header */}
-      <div style={{
-        background:   "#fff",
-        borderBottom: "1px solid #e5e7eb",
-        padding:      "16px 24px",
-        display:      "flex",
-        alignItems:   "center",
-        gap:          12,
-      }}>
+      <div style={{ background: "#fff", borderBottom: "1px solid #e5e7eb", padding: "16px 24px", display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ fontSize: 22 }}>🌊</div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 18, color: "#111827" }}>DriftWatch</div>
           <div style={{ fontSize: 12, color: "#9ca3af" }}>AI-powered data quality monitor</div>
         </div>
-        {/* API status indicator */}
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: "50%",
-            background: apiOk === null ? "#9ca3af" : apiOk ? "#22c55e" : "#ef4444",
-          }} />
+          <div style={{ width: 8, height: 8, borderRadius: "50%", background: apiOk === null ? "#9ca3af" : apiOk ? "#22c55e" : "#ef4444" }} />
           <span style={{ color: "#6b7280" }}>
             {apiOk === null ? "Checking..." : apiOk ? "Backend connected" : "Backend offline"}
           </span>
@@ -411,37 +354,13 @@ export default function App() {
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "28px 20px" }}>
 
         {/* Upload card */}
-        <div style={{
-          background:   "#fff",
-          borderRadius: 14,
-          border:       "1.5px solid #e5e7eb",
-          padding:      "24px",
-          marginBottom: 24,
-          boxShadow:    "0 1px 4px rgba(0,0,0,0.05)",
-        }}>
-          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 18 }}>
-            📁 Upload your data
-          </div>
+        <div style={{ background: "#fff", borderRadius: 14, border: "1.5px solid #e5e7eb", padding: "24px", marginBottom: 24, boxShadow: "0 1px 4px rgba(0,0,0,0.05)" }}>
+          <div style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 18 }}>📁 Upload your data</div>
 
           {/* File input */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13, color: "#374151", fontWeight: 500, display: "block", marginBottom: 6 }}>
-              CSV File
-            </label>
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileChange}
-              style={{
-                width:        "100%",
-                padding:      "10px 12px",
-                border:       "1.5px dashed #d1d5db",
-                borderRadius: 8,
-                fontSize:     13,
-                cursor:       "pointer",
-                background:   "#fafafa",
-              }}
-            />
+            <label style={labelStyle}>CSV File</label>
+            <input type="file" accept=".csv" onChange={handleFileChange} style={{ ...inputStyle, border: "1.5px dashed #d1d5db", background: "#fafafa", cursor: "pointer" }} />
             {file && (
               <div style={{ fontSize: 12, color: "#22c55e", marginTop: 4 }}>
                 ✅ {file.name} loaded — {columns.length} columns found
@@ -451,64 +370,53 @@ export default function App() {
 
           {/* Describe your data */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13, color: "#374151", fontWeight: 500, display: "block", marginBottom: 6 }}>
-              Describe your data
-            </label>
+            <label style={labelStyle}>Describe your data</label>
             <input
-              type="text"
-              value={context}
+              type="text" value={context}
               onChange={e => setContext(e.target.value)}
               placeholder="e.g. daily sales of an online store"
-              style={{
-                width:        "100%",
-                padding:      "10px 12px",
-                border:       "1.5px solid #e5e7eb",
-                borderRadius: 8,
-                fontSize:     13,
-                outline:      "none",
-                boxSizing:    "border-box",
-              }}
+              style={inputStyle}
             />
           </div>
 
           {/* Date column dropdown */}
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 13, color: "#374151", fontWeight: 500, display: "block", marginBottom: 6 }}>
-              Date column
-            </label>
-            <select
-              value={dateColumn}
-              onChange={e => setDateColumn(e.target.value)}
-              style={{
-                width:        "100%",
-                padding:      "10px 12px",
-                border:       "1.5px solid #e5e7eb",
-                borderRadius: 8,
-                fontSize:     13,
-                background:   "#fff",
-                outline:      "none",
-              }}
-            >
+            <label style={labelStyle}>Date column</label>
+            <select value={dateColumn} onChange={e => setDateColumn(e.target.value)} style={inputStyle}>
               <option value="">-- upload a CSV first --</option>
               {columns.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
 
           {/* Sensitivity picker */}
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ fontSize: 13, color: "#374151", fontWeight: 500, display: "block", marginBottom: 8 }}>
-              How sensitive should DriftWatch be?
-            </label>
+          <div style={{ marginBottom: 16 }}>
+            <label style={labelStyle}>How sensitive should DriftWatch be?</label>
             <SensitivityPicker value={sensitivity} onChange={setSensitivity} />
           </div>
 
-          {/* Error message */}
+          {/* Email alert — optional */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={labelStyle}>
+              📧 Send email alert if anomaly found
+              <span style={{ fontWeight: 400, color: "#9ca3af", marginLeft: 6 }}>(optional)</span>
+            </label>
+            <input
+              type="email"
+              value={recipientEmail}
+              onChange={e => setRecipientEmail(e.target.value)}
+              placeholder="your@email.com — leave empty to skip"
+              style={inputStyle}
+            />
+            {recipientEmail && (
+              <div style={{ fontSize: 12, color: "#6366f1", marginTop: 4 }}>
+                ✉️ Alert will be sent to {recipientEmail} if anomaly detected
+              </div>
+            )}
+          </div>
+
+          {/* Error */}
           {error && (
-            <div style={{
-              background: "#fef2f2", border: "1px solid #fca5a5",
-              borderRadius: 8, padding: "10px 14px",
-              fontSize: 13, color: "#dc2626", marginBottom: 14,
-            }}>
+            <div style={{ background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#dc2626", marginBottom: 14 }}>
               ⚠️ {error}
             </div>
           )}
@@ -518,16 +426,12 @@ export default function App() {
             onClick={handleScan}
             disabled={loading}
             style={{
-              width:        "100%",
-              padding:      "13px",
-              background:   loading ? "#a5b4fc" : "#6366f1",
-              color:        "#fff",
-              border:       "none",
-              borderRadius: 10,
-              fontSize:     15,
-              fontWeight:   700,
-              cursor:       loading ? "not-allowed" : "pointer",
-              transition:   "background 0.2s",
+              width: "100%", padding: "13px",
+              background: loading ? "#a5b4fc" : "#6366f1",
+              color: "#fff", border: "none", borderRadius: 10,
+              fontSize: 15, fontWeight: 700,
+              cursor: loading ? "not-allowed" : "pointer",
+              transition: "background 0.2s",
             }}
           >
             {loading ? "⏳ Scanning... (Gemini is thinking)" : "🚀 Scan Now"}
@@ -545,6 +449,28 @@ export default function App() {
             </div>
 
             <SummaryBar summary={result.summary} />
+
+            {/* Email sent confirmation */}
+            {result.email_alert?.sent && (
+              <div style={{
+                background: "#f0fdf4", border: "1px solid #86efac",
+                borderRadius: 10, padding: "12px 16px", marginBottom: 16,
+                fontSize: 13, color: "#15803d",
+              }}>
+                ✅ Alert email sent to <strong>{result.email_alert.recipient}</strong>
+              </div>
+            )}
+
+            {/* Email failed */}
+            {result.email_alert && !result.email_alert.sent && (
+              <div style={{
+                background: "#fef2f2", border: "1px solid #fca5a5",
+                borderRadius: 10, padding: "12px 16px", marginBottom: 16,
+                fontSize: 13, color: "#dc2626",
+              }}>
+                ⚠️ Email could not be sent: {result.email_alert.reason}
+              </div>
+            )}
 
             {result.columns.map((col, i) => (
               <ColumnCard key={i} col={col} />
