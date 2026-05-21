@@ -301,7 +301,7 @@ def send_email_alert(recipient_email, scan_result):
     # Build email
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
-    msg["From"]    = SENDER_EMAIL
+    msg["From"] = f"DriftWatch <{SENDER_EMAIL}>"
     msg["To"]      = recipient_email
 
     # Attach both plain text and HTML versions
