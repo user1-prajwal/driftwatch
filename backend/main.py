@@ -9,6 +9,16 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from detector import run_driftwatch
 from alerts import send_email_alert
+from monitors import (
+    create_monitor, get_all_monitors,
+    get_monitor, delete_monitor,
+    pause_monitor, resume_monitor
+)
+from scheduler import (
+    start_scheduler, stop_scheduler,
+    add_monitor_to_scheduler,
+    remove_monitor_from_scheduler
+)
 
 # Create FastAPI app
 
@@ -27,6 +37,24 @@ app.add_middleware(
 
 # In-memory storage for scan results
 scan_results = {}
+
+
+# ──────────────────────────────────────────────
+# Start scheduler when app starts
+# Stop scheduler when app shuts down
+# ──────────────────────────────────────────────
+ 
+@app.on_event("startup")
+def startup():
+    start_scheduler()
+ 
+ 
+@app.on_event("shutdown")
+def shutdown():
+    stop_scheduler()
+ 
+ 
+
 
 
 # ROUTE 1 — Health check
@@ -155,3 +183,50 @@ async def get_columns(file: UploadFile = File(...)):
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
+            
+            
+            
+            
+            
+            
+# ROUTE 6 — Create a new monitor
+# User sets: source, schedule, email, sensitivity
+ 
+@app.post("/monitors")
+def create_new_monitor(
+    name:           str = Form(...),
+    source_type:    str = Form(...),   # "google_sheet" or "csv_path"
+    source_value:   str = Form(...),   # URL or file path
+    date_column:    str = Form(...),
+    context:        str = Form(...),
+    sensitivity:    str = Form("medium"),
+    alert_email:    str = Form(...),
+    interval_hours: int = Form(...),   # user picks: 1, 6, 12, 24, etc.
+):
+    if sensitivity not in ["low", "medium", "high"]:
+        raise HTTPException(status_code=400, detail="sensitivity must be low/medium/high")
+ 
+    if interval_hours < 1:
+        raise HTTPException(status_code=400, detail="interval_hours must be at least 1")
+ 
+    # Save monitor to JSON
+    monitor = create_monitor(
+        name           = name,
+        source_type    = source_type,
+        source_value   = source_value,
+        date_column    = date_column,
+        context        = context,
+        sensitivity    = sensitivity,
+        alert_email    = alert_email,
+        interval_hours = interval_hours,
+    )
+ 
+    # Add to scheduler immediately
+    add_monitor_to_scheduler(monitor)
+ 
+    return {
+        "message": f"Monitor '{name}' created and scheduled.",
+        "monitor": monitor,
+    }
+ 
+ 
