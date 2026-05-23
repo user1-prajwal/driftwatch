@@ -184,11 +184,7 @@ async def get_columns(file: UploadFile = File(...)):
         if os.path.exists(temp_path):
             os.remove(temp_path)
             
-            
-            
-            
-            
-            
+                           
 # ROUTE 6 — Create a new monitor
 # User sets: source, schedule, email, sensitivity
  
@@ -229,4 +225,14 @@ def create_new_monitor(
         "monitor": monitor,
     }
  
+ 
+# ROUTE 7 — Get all monitors
+ 
+@app.get("/monitors")
+def list_monitors():
+    monitors = get_all_monitors()
+    return {
+        "total":    len(monitors),
+        "monitors": monitors,
+    }
  
