@@ -187,7 +187,6 @@ async def get_columns(file: UploadFile = File(...)):
                            
 # ROUTE 6 — Create a new monitor
 # User sets: source, schedule, email, sensitivity
- 
 @app.post("/monitors")
 def create_new_monitor(
     name:           str = Form(...),
@@ -227,7 +226,6 @@ def create_new_monitor(
  
  
 # ROUTE 7 — Get all monitors
- 
 @app.get("/monitors")
 def list_monitors():
     monitors = get_all_monitors()
@@ -235,4 +233,14 @@ def list_monitors():
         "total":    len(monitors),
         "monitors": monitors,
     }
+
+ 
+# ROUTE 8 — Get one monitor
+@app.get("/monitors/{monitor_id}")
+def get_one_monitor(monitor_id: str):
+    monitor = get_monitor(monitor_id)
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found.")
+    return monitor
+ 
  
