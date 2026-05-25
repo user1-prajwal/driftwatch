@@ -243,4 +243,12 @@ def get_one_monitor(monitor_id: str):
         raise HTTPException(status_code=404, detail="Monitor not found.")
     return monitor
  
+# ROUTE 9 — Pause a monitor
+@app.post("/monitors/{monitor_id}/pause")
+def pause(monitor_id: str):
+    if not pause_monitor(monitor_id):
+        raise HTTPException(status_code=404, detail="Monitor not found.")
+    remove_monitor_from_scheduler(monitor_id)
+    return {"message": f"Monitor {monitor_id} paused."}
+ 
  
