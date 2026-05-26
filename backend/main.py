@@ -251,4 +251,14 @@ def pause(monitor_id: str):
     remove_monitor_from_scheduler(monitor_id)
     return {"message": f"Monitor {monitor_id} paused."}
  
+# ROUTE 10 — Resume a monitor
+ 
+@app.post("/monitors/{monitor_id}/resume")
+def resume(monitor_id: str):
+    if not resume_monitor(monitor_id):
+        raise HTTPException(status_code=404, detail="Monitor not found.")
+    monitor = get_monitor(monitor_id)
+    add_monitor_to_scheduler(monitor)
+    return {"message": f"Monitor {monitor_id} resumed."}
+ 
  
