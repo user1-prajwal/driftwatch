@@ -13,3 +13,10 @@ def _load_all():
     with open(MONITORS_FILE, "r") as f:
         return json.load(f)
 
+
+def _save_all(monitors):
+    """Save all monitors to JSON file."""
+    os.makedirs("data", exist_ok=True)
+    with open(MONITORS_FILE, "w") as f:
+        json.dump(monitors, f, indent=2)
+
