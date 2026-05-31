@@ -78,11 +78,6 @@ def get_monitor(monitor_id):
     monitors = _load_all()
     return monitors.get(monitor_id)
  
- 
-# ══════════════════════════════════════════════
-# UPDATE monitor after a run
-# ══════════════════════════════════════════════
- 
 def update_after_run(monitor_id, status, alert_sent=False):
     """
     Called after every scheduled scan.
@@ -110,4 +105,11 @@ def pause_monitor(monitor_id):
         return True
     return False
  
+def resume_monitor(monitor_id):
+    monitors = _load_all()
+    if monitor_id in monitors:
+        monitors[monitor_id]["status"] = "active"
+        _save_all(monitors)
+        return True
+    return False
  
