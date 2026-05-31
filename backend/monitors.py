@@ -67,3 +67,9 @@ def create_monitor(
  
     return monitor
  
+# GET monitors
+def get_all_monitors():
+    """Returns all monitors."""
+    return list(_load_all().values())
+ 
+ 
