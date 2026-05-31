@@ -72,4 +72,42 @@ def get_all_monitors():
     """Returns all monitors."""
     return list(_load_all().values())
  
+
+def get_monitor(monitor_id):
+    """Returns one specific monitor by ID."""
+    monitors = _load_all()
+    return monitors.get(monitor_id)
+ 
+ 
+# ══════════════════════════════════════════════
+# UPDATE monitor after a run
+# ══════════════════════════════════════════════
+ 
+def update_after_run(monitor_id, status, alert_sent=False):
+    """
+    Called after every scheduled scan.
+    Updates last_run time, status, and counters.
+    """
+    monitors = _load_all()
+    if monitor_id not in monitors:
+        return
+ 
+    monitors[monitor_id]["last_run"]    = datetime.now().isoformat()
+    monitors[monitor_id]["last_status"] = status
+    monitors[monitor_id]["total_runs"] += 1
+ 
+    if alert_sent:
+        monitors[monitor_id]["total_alerts"] += 1
+ 
+    _save_all(monitors)
+ 
+ 
+def pause_monitor(monitor_id):
+    monitors = _load_all()
+    if monitor_id in monitors:
+        monitors[monitor_id]["status"] = "paused"
+        _save_all(monitors)
+        return True
+    return False
+ 
  
