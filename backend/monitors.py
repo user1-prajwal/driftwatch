@@ -113,3 +113,11 @@ def resume_monitor(monitor_id):
         return True
     return False
  
+def delete_monitor(monitor_id):
+    monitors = _load_all()
+    if monitor_id in monitors:
+        del monitors[monitor_id]
+        _save_all(monitors)
+        return True
+    return False
+ 
