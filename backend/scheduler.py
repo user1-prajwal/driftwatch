@@ -192,3 +192,9 @@ def start_scheduler():
             add_monitor_to_scheduler(monitor)
     else:
         print("📋 No active monitors yet. Create one from the dashboard.")
+        
+def stop_scheduler():
+    """Called when FastAPI shuts down."""
+    if scheduler.running:
+        scheduler.shutdown()
+        print("⏰ Scheduler stopped.")
