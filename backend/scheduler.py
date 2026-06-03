@@ -162,3 +162,9 @@ def add_monitor_to_scheduler(monitor):
     )
  
     print(f"⏰ Scheduled: '{monitor['name']}' every {monitor['interval_hours']} hour(s)")
+    
+def remove_monitor_from_scheduler(monitor_id):
+    job_id = f"monitor_{monitor_id}"
+    if scheduler.get_job(job_id):
+        scheduler.remove_job(job_id)
+        print(f"🗑️  Removed from scheduler: {monitor_id}")
