@@ -143,3 +143,22 @@ def run_monitor(monitor_id):
         print(f"❌ Monitor '{monitor['name']}' failed: {e}")
         update_after_run(monitor_id, "ERROR")
 
+# ADD a monitor to the scheduler
+# Called when user creates a new monitor
+def add_monitor_to_scheduler(monitor):
+    job_id = f"monitor_{monitor['id']}"
+ 
+    # Remove existing job if it exists (for updates)
+    if scheduler.get_job(job_id):
+        scheduler.remove_job(job_id)
+ 
+    scheduler.add_job(
+        func            = run_monitor,
+        trigger         = IntervalTrigger(hours=monitor["interval_hours"]),
+        args            = [monitor["id"]],
+        id              = job_id,
+        name            = monitor["name"],
+        replace_existing= True,
+    )
+ 
+    print(f"⏰ Scheduled: '{monitor['name']}' every {monitor['interval_hours']} hour(s)")
