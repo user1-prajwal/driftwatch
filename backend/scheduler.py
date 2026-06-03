@@ -168,3 +168,27 @@ def remove_monitor_from_scheduler(monitor_id):
     if scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
         print(f"🗑️  Removed from scheduler: {monitor_id}")
+        
+        
+# START the scheduler
+# Called once when FastAPI starts
+def start_scheduler():
+    """
+    Starts APScheduler and loads all existing monitors.
+    Called automatically when FastAPI app starts.
+    """
+ 
+    if not scheduler.running:
+        scheduler.start()
+        print("⏰ DriftWatch scheduler started\n")
+ 
+    # Load all existing active monitors from JSON
+    monitors = get_all_monitors()
+    active   = [m for m in monitors if m["status"] == "active"]
+ 
+    if active:
+        print(f"📋 Loading {len(active)} active monitor(s)...")
+        for monitor in active:
+            add_monitor_to_scheduler(monitor)
+    else:
+        print("📋 No active monitors yet. Create one from the dashboard.")
