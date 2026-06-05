@@ -32,6 +32,9 @@ def fetch_data(source_type, source_value):
 
         if "/edit" in source_value:
             csv_url = source_value.replace("/edit", "/export?format=csv")
+            
+        elif "output=csv" in source_value or "format=csv" in source_value:
+            csv_url = source_value 
         elif "export?format=csv" in source_value:
             csv_url = source_value
         else:
