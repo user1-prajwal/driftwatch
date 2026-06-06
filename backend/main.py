@@ -39,11 +39,8 @@ app.add_middleware(
 scan_results = {}
 
 
-# ──────────────────────────────────────────────
 # Start scheduler when app starts
 # Stop scheduler when app shuts down
-# ──────────────────────────────────────────────
- 
 @app.on_event("startup")
 def startup():
     start_scheduler()
@@ -53,10 +50,6 @@ def startup():
 def shutdown():
     stop_scheduler()
  
- 
-
-
-
 # ROUTE 1 — Health check
 
 @app.get("/health")
@@ -67,9 +60,7 @@ def health_check():
         "timestamp": datetime.now().isoformat()
     }
 
-
 # ROUTE 2 — Scan a CSV file
-
 @app.post("/scan")
 async def scan_file(
     file:             UploadFile = File(...),
@@ -268,3 +259,27 @@ def delete(monitor_id: str):
     if not delete_monitor(monitor_id):
         raise HTTPException(status_code=404, detail="Monitor not found.")
     return {"message": f"Monitor {monitor_id} deleted."}
+
+
+# ROUTE 12 — Manually trigger a monitor NOW
+@app.post("/monitors/{monitor_id}/run")
+def run_now(monitor_id: str):
+    """
+    Manually triggers a monitor scan immediately.
+    Useful for testing without waiting for schedule.
+    """
+    monitor = get_monitor(monitor_id)
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found.")
+
+    from scheduler import run_monitor
+    import threading
+
+    # Run in background thread so API responds immediately
+    thread = threading.Thread(target=run_monitor, args=[monitor_id])
+    thread.start()
+
+    return {
+        "message": f"Monitor '{monitor['name']}' triggered manually.",
+        "monitor_id": monitor_id
+    }
