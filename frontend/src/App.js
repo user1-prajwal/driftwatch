@@ -205,29 +205,50 @@ function LandingPage({ onStart }) {
 
         {/* Stats row (UNCHANGED) */}
         <div
-          style={{
-            display: "flex",
-            gap: 40,
-            flexWrap: "wrap",
-            justifyContent: "center",
-          }}
-        >
-          {[
-            { n: "3", l: "ML Detectors" },
-            { n: "AI", l: "Root Cause Analysis" },
-            { n: "∞", l: "Data Sources" },
-            { n: "₹0", l: "Cost to Run" },
-          ].map((s) => (
-            <div key={s.l} style={{ textAlign: "center" }}>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#6366f1" }}>
-                {s.n}
-              </div>
-              <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>
-                {s.l}
-              </div>
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          flexWrap: "wrap",
+          gap: "32px",
+          marginTop: 20,
+        }}
+      >
+        {[
+          { n: "24/7", l: "Monitoring", c: "#6366f1" },
+          { n: "Real-Time", l: "Alerts", c: "#ef4444" },
+          { n: "CSV", l: "Upload & Scan", c: "#10b981" },
+          { n: "Zero", l: "Setup Cost", c: "#f59e0b" },
+        ].map((s) => (
+          <div
+            key={s.l}
+            style={{
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 800,
+                color: s.c,
+                letterSpacing: "-0.03em",
+              }}
+            >
+              {s.n}
             </div>
-          ))}
-        </div>
+
+            <div
+              style={{
+                fontSize: 13,
+                color: "#64748b",
+                marginTop: 4,
+                fontWeight: 500,
+              }}
+            >
+              {s.l}
+            </div>
+          </div>
+        ))}
+      </div>
 
         <button
           onClick={scrollDown}
