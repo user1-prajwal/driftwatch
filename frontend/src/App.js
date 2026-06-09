@@ -3,10 +3,6 @@ import { useState, useRef } from "react";
 
 const API = "http://localhost:8000";
 
-const baseBtnHover = {
-  transition: "transform 0.2s ease",
-};
-
 //LANDING PAGE 
 function LandingPage({ onStart }) {
   const featuresRef = useRef(null);
@@ -141,67 +137,125 @@ function LandingPage({ onStart }) {
 
         {/* ── TWO MAIN ACTIONS (UNCHANGED) ── */}
         <div
+        style={{
+          display: "flex",
+          gap: 20,
+          flexWrap: "wrap",
+          justifyContent: "center",
+          marginBottom: 60,
+        }}
+      >
+        {/* Auto Monitor */}
+        <button
+          onClick={() => onStart("monitors")}
           style={{
-            display: "flex",
-            gap: 16,
-            flexWrap: "wrap",
-            justifyContent: "center",
-            marginBottom: 60,
+            padding: "18px 34px",
+            border: "none",
+            borderRadius: 18,
+            cursor: "pointer",
+            background:
+              "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
+            color: "#fff",
+            minWidth: 260,
+            transition: "all 0.25s ease",
+            boxShadow:
+              "0 10px 30px rgba(99,102,241,0.35)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform =
+              "translateY(-4px) scale(1.02)";
+            e.currentTarget.style.boxShadow =
+              "0 16px 40px rgba(99,102,241,0.45)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform =
+              "translateY(0) scale(1)";
+            e.currentTarget.style.boxShadow =
+              "0 10px 30px rgba(99,102,241,0.35)";
           }}
         >
-          <button
-            onClick={() => onStart("monitors")}
+          <div
             style={{
-              padding: "16px 32px",
-              background: "#6366f1",
-              color: "#fff",
-              border: "none",
-              borderRadius: 12,
-              fontSize: 16,
+              fontSize: 18,
               fontWeight: 700,
-              cursor: "pointer",
-              boxShadow: "0 4px 24px rgba(99,102,241,0.35)",
-              ...baseBtnHover,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "translateY(-2px)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.transform = "translateY(0)")
-            }
           >
             ⏰ Set Up Auto Monitor
-            <div style={{ fontSize: 12, fontWeight: 400, opacity: 0.85, marginTop: 3 }}>
-              Watch your data automatically
-            </div>
-          </button>
+          </div>
 
-          <button
-            onClick={() => onStart("scan")}
+          <div
             style={{
-              padding: "16px 32px",
-              background: "#fff",
-              color: "#4f46e5",
-              border: "2px solid #c7d2fe",
-              borderRadius: 12,
-              fontSize: 16,
-              fontWeight: 700,
-              cursor: "pointer",
-              ...baseBtnHover,
+              marginTop: 6,
+              fontSize: 13,
+              opacity: 0.9,
+              fontWeight: 400,
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "translateY(-2px)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.transform = "translateY(0)")
-            }
           >
-            🔍 One-time Scan
-            <div style={{ fontSize: 12, fontWeight: 400, color: "#94a3b8", marginTop: 3 }}>
-              Upload a CSV and scan now
-            </div>
-          </button>
-        </div>
+            Watch your data automatically
+          </div>
+        </button>
+
+        {/* One-Time Scan */}
+        <button
+          onClick={() => onStart("scan")}
+          style={{
+            padding: "18px 34px",
+            borderRadius: 18,
+            cursor: "pointer",
+            minWidth: 260,
+            border: "1px solid rgba(255,255,255,0.3)",
+            background: "rgba(255,255,255,0.75)",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            color: "#4f46e5",
+            transition: "all 0.25s ease",
+            boxShadow:
+              "0 10px 30px rgba(0,0,0,0.08)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform =
+              "translateY(-4px) scale(1.02)";
+            e.currentTarget.style.boxShadow =
+              "0 16px 40px rgba(0,0,0,0.12)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform =
+              "translateY(0) scale(1)";
+            e.currentTarget.style.boxShadow =
+              "0 10px 30px rgba(0,0,0,0.08)";
+          }}
+        >
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+            }}
+          >
+            🔍 One-Time Scan
+          </div>
+
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 13,
+              color: "#64748b",
+              fontWeight: 400,
+            }}
+          >
+            Upload a CSV and scan now
+          </div>
+        </button>
+      </div>
 
         {/* Stats row (UNCHANGED) */}
         <div
