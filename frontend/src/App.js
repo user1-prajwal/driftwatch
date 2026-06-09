@@ -109,7 +109,7 @@ function LandingPage({ onStart }) {
           maxWidth: 850,
         }}
       >
-        Your data breaks silently.
+        Your data breaks silently
         <br />
         <span
           style={{
@@ -118,7 +118,7 @@ function LandingPage({ onStart }) {
         >
           DriftWatch
         </span>{" "}
-        catches it.
+        catches it
       </h1>
 
         <p
