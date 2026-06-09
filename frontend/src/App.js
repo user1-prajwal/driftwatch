@@ -61,7 +61,7 @@ function LandingPage({ onStart }) {
                 border: "1.5px solid #e2e8f0",
                 borderRadius: 8,
                 fontSize: 13,
-                color: "#64748b",
+                color: "#2219198c",
                 cursor: "pointer",
                 fontWeight: 500,
               }}
@@ -98,26 +98,32 @@ function LandingPage({ onStart }) {
           justifyContent: "center",
           padding: "80px 5% 60px",
           background:
-            "linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f0fdf4 100%)",
+            "linear-gradient(135deg, #62e2c271 0%, #f5f6fa 50%, #f5f5f5 100%)",
           textAlign: "center",
         }}
       >
-        <h1
+       <h1
+        style={{
+          fontSize: "clamp(42px, 6vw, 68px)",
+          fontWeight: 800,
+          lineHeight: 1.05,
+          letterSpacing: "-0.04em",
+          color: "#0f172a",
+          marginBottom: 20,
+          maxWidth: 850,
+        }}
+      >
+        Your data breaks silently.
+        <br />
+        <span
           style={{
-            fontSize: "clamp(36px, 6vw, 64px)",
-            fontWeight: 800,
-            lineHeight: 1.1,
-            marginBottom: 20,
-            maxWidth: 800,
-            background: "linear-gradient(135deg, #1e293b, #6366f1)",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
+            color: "#6366f1",
           }}
         >
-          Your data breaks silently.
-          <br />
-          DriftWatch catches it.
-        </h1>
+          DriftWatch
+        </span>{" "}
+        catches it.
+      </h1>
 
         <p
           style={{
@@ -128,10 +134,10 @@ function LandingPage({ onStart }) {
             marginBottom: 40,
           }}
         >
-          Automatically monitor your data sources, detect anomalies using 3 ML
-          models, and get AI-powered explanations — before the problem affects
+          Automatically monitor your data sources, detect anomalies and get AI-powered explanations — before the problem affects
           your business.
         </p>
+
 
         {/* ── TWO MAIN ACTIONS (UNCHANGED) ── */}
         <div
@@ -250,6 +256,10 @@ function LandingPage({ onStart }) {
     </div>
   );
 }
+
+
+
+
 
 /* ---------------- ROOT APP (FIXED BUG ONLY) ---------------- */
 export default function App() {
