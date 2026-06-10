@@ -1,6 +1,6 @@
-
 import { useState, useRef } from "react";
 import MonitorsPage from "./MonitorsPage";
+import ScanPage from "./ScanPage";
 
 const API = "http://localhost:8000";
 
@@ -344,5 +344,8 @@ export default function App() {
   return <MonitorsPage onBack={() => setPage("landing")} />;
 }
 
+if (page=== "scan"){
+  return <ScanPage onBack={() => setPage("landing")} />
+}
   return <LandingPage onStart={(p) => setPage(p)} />;
 }
