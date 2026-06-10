@@ -1,5 +1,6 @@
 
 import { useState, useRef } from "react";
+import MonitorsPage from "./MonitorsPage";
 
 const API = "http://localhost:8000";
 
@@ -135,7 +136,7 @@ function LandingPage({ onStart }) {
         </p>
 
 
-        {/* ── TWO MAIN ACTIONS (UNCHANGED) ── */}
+        {/* ── TWO MAIN ACTIONS ── */}
         <div
         style={{
           display: "flex",
@@ -147,7 +148,7 @@ function LandingPage({ onStart }) {
       >
         {/* Auto Monitor */}
         <button
-          onClick={() => onStart("monitors")}
+          onClick={() => onStart("monitor")}
           style={{
             padding: "18px 34px",
             border: "none",
@@ -336,9 +337,12 @@ function LandingPage({ onStart }) {
 
 
 
-/* ---------------- ROOT APP (FIXED BUG ONLY) ---------------- */
+//  ROOT APP 
 export default function App() {
   const [page, setPage] = useState("landing");
+  if (page === "monitor") {
+  return <MonitorsPage onBack={() => setPage("landing")} />;
+}
 
   return <LandingPage onStart={(p) => setPage(p)} />;
 }
