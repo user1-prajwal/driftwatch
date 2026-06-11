@@ -59,3 +59,19 @@ def get_all_monitors(user_id):
         .execute()
     )
     return response.data or []
+
+
+def get_monitor(monitor_id, user_id):
+    """
+    Returns one monitor — only if it belongs to this user.
+    """
+    response = (
+        supabase_admin
+        .table("monitors")
+        .select("*")
+        .eq("id", monitor_id)
+        .eq("user_id", user_id)
+        .execute()
+    )
+    data = response.data
+    return data[0] if data else None
