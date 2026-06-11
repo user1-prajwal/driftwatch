@@ -90,3 +90,17 @@ def get_monitor_by_id(monitor_id):
     )
     data = response.data
     return data[0] if data else None
+
+def get_all_active_monitors():
+    """
+    Returns ALL active monitors across ALL users.
+    Used by scheduler on startup.
+    """
+    response = (
+        supabase_admin
+        .table("monitors")
+        .select("*")
+        .eq("status", "active")
+        .execute()
+    )
+    return response.data or []
