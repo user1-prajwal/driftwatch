@@ -75,3 +75,18 @@ def get_monitor(monitor_id, user_id):
     )
     data = response.data
     return data[0] if data else None
+
+def get_monitor_by_id(monitor_id):
+    """
+    Returns monitor by ID only — used by scheduler.
+    Scheduler runs as server, not as a user.
+    """
+    response = (
+        supabase_admin
+        .table("monitors")
+        .select("*")
+        .eq("id", monitor_id)
+        .execute()
+    )
+    data = response.data
+    return data[0] if data else None
