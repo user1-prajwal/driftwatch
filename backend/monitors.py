@@ -1,123 +1,43 @@
-import json
-import uuid
-import os
 from datetime import datetime
-
-MONITORS_FILE = "data/monitors.json"
-
-
-def _load_all():
-    """Read all monitors from JSON file."""
-    if not os.path.exists(MONITORS_FILE):
-        return {}
-    with open(MONITORS_FILE, "r") as f:
-        return json.load(f)
-
-
-def _save_all(monitors):
-    """Save all monitors to JSON file."""
-    os.makedirs("data", exist_ok=True)
-    with open(MONITORS_FILE, "w") as f:
-        json.dump(monitors, f, indent=2)
-
+from supabase_client import supabase_admin
+ 
  
 # CREATE a new monitor
 def create_monitor(
-    name,               # "Daily Sales Check"
-    source_type,        # "google_sheet" or "csv_path"
-    source_value,       # sheet URL or file path
-    date_column,        # which column has dates
-    context,            # plain English description
-    sensitivity,        # "low", "medium", "high"
-    alert_email,        # where to send alerts
-    interval_hours,     # check every X hours (user picks)
+    user_id,
+    name,
+    source_type,
+    source_value,
+    date_column,
+    context,
+    sensitivity,
+    alert_email,
+    interval_hours,
 ):
     """
-    Creates a new monitor and saves it.
-    Returns the monitor dict with its ID.
+    Saves a new monitor to Supabase.
+    user_id comes from the JWT token — not from user input.
+    This means users can never create monitors for other users.
     """
  
-    monitor_id = str(uuid.uuid4())[:8]
- 
-    monitor = {
-        "id":             monitor_id,
-        "name":           name,
-        "source_type":    source_type,
-        "source_value":   source_value,
-        "date_column":    date_column,
-        "context":        context,
-        "sensitivity":    sensitivity,
-        "alert_email":    alert_email,
-        "interval_hours": interval_hours,
-        "status":         "active",
-        "created_at":     datetime.now().isoformat(),
-        "last_run":       None,
-        "last_status":    None,
-        "total_runs":     0,
-        "total_alerts":   0,
+    data = {
+        "user_id":       user_id,
+        "name":          name,
+        "source_type":   source_type,
+        "source_value":  source_value,
+        "date_column":   date_column,
+        "context":       context,
+        "sensitivity":   sensitivity,
+        "alert_email":   alert_email,
+        "interval_hours":interval_hours,
+        "status":        "active",
     }
  
-    monitors = _load_all()
-    monitors[monitor_id] = monitor
-    _save_all(monitors)
+    response = supabase_admin.table("monitors").insert(data).execute()
  
-    print(f"✅ Monitor created: '{name}' (ID: {monitor_id})")
-    print(f"   Runs every {interval_hours} hour(s)")
-    print(f"   Alerts go to: {alert_email}\n")
+    if not response.data:
+        raise Exception("Failed to create monitor in database.")
  
+    monitor = response.data[0]
+    print(f"✅ Monitor created: '{name}' for user {user_id[:8]}...")
     return monitor
- 
-# GET monitors
-def get_all_monitors():
-    """Returns all monitors."""
-    return list(_load_all().values())
- 
-
-def get_monitor(monitor_id):
-    """Returns one specific monitor by ID."""
-    monitors = _load_all()
-    return monitors.get(monitor_id)
- 
-def update_after_run(monitor_id, status, alert_sent=False):
-    """
-    Called after every scheduled scan.
-    Updates last_run time, status, and counters.
-    """
-    monitors = _load_all()
-    if monitor_id not in monitors:
-        return
- 
-    monitors[monitor_id]["last_run"]    = datetime.now().isoformat()
-    monitors[monitor_id]["last_status"] = status
-    monitors[monitor_id]["total_runs"] += 1
- 
-    if alert_sent:
-        monitors[monitor_id]["total_alerts"] += 1
- 
-    _save_all(monitors)
- 
- 
-def pause_monitor(monitor_id):
-    monitors = _load_all()
-    if monitor_id in monitors:
-        monitors[monitor_id]["status"] = "paused"
-        _save_all(monitors)
-        return True
-    return False
- 
-def resume_monitor(monitor_id):
-    monitors = _load_all()
-    if monitor_id in monitors:
-        monitors[monitor_id]["status"] = "active"
-        _save_all(monitors)
-        return True
-    return False
- 
-def delete_monitor(monitor_id):
-    monitors = _load_all()
-    if monitor_id in monitors:
-        del monitors[monitor_id]
-        _save_all(monitors)
-        return True
-    return False
- 
