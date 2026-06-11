@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from detector import run_driftwatch
 from alerts import send_email_alert
+from auth import get_current_user
 from monitors import (
     create_monitor, get_all_monitors,
     get_monitor, delete_monitor,
@@ -25,7 +26,7 @@ from scheduler import (
 app = FastAPI(
     title="DriftWatch API",
     description="AI-powered data quality monitor",
-    version="1.0.0"
+    version="3.0.0"
 )
 
 app.add_middleware(
@@ -34,9 +35,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# In-memory storage for scan results
-scan_results = {}
 
 
 # Start scheduler when app starts
@@ -59,41 +57,48 @@ def health_check():
         "message":   "DriftWatch is running",
         "timestamp": datetime.now().isoformat()
     }
+    
 
-# ROUTE 2 — Scan a CSV file
+# ROUTE 2 — One-time scan (NO auth required)
+# Completely stateless — results not saved
 @app.post("/scan")
 async def scan_file(
-    file:             UploadFile = File(...),
-    date_column:      str        = Form(...),
-    context:          str        = Form(...),
-    sensitivity:      str        = Form("medium"),
-    recipient_email:  str        = Form("")        # optional — empty means no email
+    file:        UploadFile = File(...),
+    date_column: str        = Form(...),
+    context:     str        = Form(...),
+    sensitivity: str        = Form("medium"),
 ):
+    """
+    Public endpoint — no login required.
+    Runs detectors and returns results.
+    Nothing is saved to database.
+    Results exist only in the API response.
+    """
+ 
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files are supported.")
-
+ 
     if sensitivity not in ["low", "medium", "high"]:
-        raise HTTPException(status_code=400, detail="sensitivity must be 'low', 'medium', or 'high'.")
-
-    temp_path = f"data/temp_{file.filename}"
+        raise HTTPException(status_code=400, detail="sensitivity must be low/medium/high.")
+ 
+    temp_path = f"data/temp_{uuid.uuid4().hex[:8]}_{file.filename}"
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-
+ 
     try:
-        results = run_driftwatch(
+        results  = run_driftwatch(
             filepath    = temp_path,
             date_column = date_column,
             context     = context,
-            sensitivity = sensitivity
+            sensitivity = sensitivity,
         )
-
-        scan_id  = str(uuid.uuid4())[:8]
+ 
         critical = [r for r in results if "CRITICAL" in r["status"]]
         warnings = [r for r in results if "WARNING"  in r["status"]]
         normal   = [r for r in results if "NORMAL"   in r["status"]]
-
-        response = {
-            "scan_id":     scan_id,
+ 
+        return {
+            "scan_id":     uuid.uuid4().hex[:8],
             "filename":    file.filename,
             "context":     context,
             "sensitivity": sensitivity,
@@ -107,23 +112,14 @@ async def scan_file(
                     "CRITICAL" if critical else
                     "WARNING"  if warnings else
                     "NORMAL"
-                )
+                ),
             },
             "columns": results,
-            "email_alert": None
         }
-
-        # Send email alert if recipient provided
-        if recipient_email.strip():
-            email_result = send_email_alert(recipient_email.strip(), response)
-            response["email_alert"] = email_result
-
-        scan_results[scan_id] = response
-        return response
-
+ 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+ 
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)
