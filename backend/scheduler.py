@@ -1,13 +1,11 @@
 import requests
-import pandas as pd
-import io
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
 from detector import run_driftwatch
 from alerts import send_email_alert
-from monitors import  get_monitor_by_id, get_monitor, update_after_run
+from monitors import  get_all_active_monitors, get_monitor_by_id, get_monitor, update_after_run
 
 # One global scheduler instance
 # Starts when FastAPI starts
@@ -155,31 +153,22 @@ def remove_monitor_from_scheduler(monitor_id):
     job_id = f"monitor_{monitor_id}"
     if scheduler.get_job(job_id):
         scheduler.remove_job(job_id)
-        print(f"🗑️  Removed from scheduler: {monitor_id}")
+        print(f"Removed from scheduler: {monitor_id}")
         
         
 # START the scheduler
-# Called once when FastAPI starts
 def start_scheduler():
-    """
-    Starts APScheduler and loads all existing monitors.
-    Called automatically when FastAPI app starts.
-    """
- 
     if not scheduler.running:
         scheduler.start()
         print("⏰ DriftWatch scheduler started\n")
  
-    # Load all existing active monitors from JSON
-    monitors = get_all_monitors()
-    active   = [m for m in monitors if m["status"] == "active"]
- 
-    if active:
-        print(f"📋 Loading {len(active)} active monitor(s)...")
-        for monitor in active:
+    monitors = get_all_active_monitors()
+    if monitors:
+        print(f"📋 Loading {len(monitors)} active monitor(s)...")
+        for monitor in monitors:
             add_monitor_to_scheduler(monitor)
     else:
-        print("📋 No active monitors yet. Create one from the dashboard.")
+        print("📋 No active monitors yet.")
         
 def stop_scheduler():
     """Called when FastAPI shuts down."""
