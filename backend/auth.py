@@ -45,3 +45,21 @@ def get_current_user(
             detail="Authentication failed. Please log in again."
         )
 
+
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials = Security(HTTPBearer(auto_error=False))
+):
+    """
+    Optional auth — use for routes that work
+    both with and without login.
+
+    Returns user if token provided, None if not.
+    """
+    if not credentials:
+        return None
+
+    try:
+        response = supabase_anon.auth.get_user(credentials.credentials)
+        return response.user if response else None
+    except:
+        return None
