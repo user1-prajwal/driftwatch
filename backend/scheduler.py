@@ -7,7 +7,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 
 from detector import run_driftwatch
 from alerts import send_email_alert
-from monitors import get_all_monitors, get_monitor, update_after_run
+from monitors import  get_monitor_by_id, get_monitor, update_after_run
 
 # One global scheduler instance
 # Starts when FastAPI starts
@@ -54,55 +54,48 @@ def fetch_data(source_type, source_value):
 
 
 # RUN ONE MONITOR
-# This is what the scheduler calls automatically
 
 def run_monitor(monitor_id):
-    """
-    Called automatically by the scheduler.
-    Fetches data, runs all detectors, sends alert if needed.
-    """
-
-    monitor = get_monitor(monitor_id)
-
+    import os
+    monitor = get_monitor_by_id(monitor_id)
+ 
     if not monitor:
-        print(f"⚠️  Monitor {monitor_id} not found. Skipping.")
+        print(f"⚠️  Monitor {monitor_id} not found.")
         return
-
+ 
     if monitor["status"] != "active":
-        print(f"⏸️  Monitor '{monitor['name']}' is paused. Skipping.")
+        print(f"⏸️  Monitor '{monitor['name']}' is paused.")
         return
-
+ 
     print(f"\n{'='*55}")
-    print(f"⏰ Auto-scan running: '{monitor['name']}'")
+    print(f"⏰ Auto-scan: '{monitor['name']}'")
     print(f"   Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"{'='*55}\n")
-
+ 
+    temp_path = None
     try:
-        # 1. Fetch the data
         temp_path = fetch_data(monitor["source_type"], monitor["source_value"])
-
-        # 2. Run all 3 detectors
+ 
         results = run_driftwatch(
             filepath    = temp_path,
             date_column = monitor["date_column"],
             context     = monitor["context"],
             sensitivity = monitor["sensitivity"],
         )
-
-        # 3. Build scan result object (same format as /scan endpoint)
-        from uuid import uuid4
+ 
+        import uuid
         critical = [r for r in results if "CRITICAL" in r["status"]]
         warnings = [r for r in results if "WARNING"  in r["status"]]
         normal   = [r for r in results if "NORMAL"   in r["status"]]
-
+ 
         overall = (
             "CRITICAL" if critical else
             "WARNING"  if warnings else
             "NORMAL"
         )
-
+ 
         scan_result = {
-            "scan_id":     str(uuid4())[:8],
+            "scan_id":     uuid.uuid4().hex[:8],
             "filename":    monitor["source_value"],
             "context":     monitor["context"],
             "sensitivity": monitor["sensitivity"],
@@ -116,25 +109,27 @@ def run_monitor(monitor_id):
             },
             "columns": results,
         }
-
-        # 4. Send email alert if anomaly found
+ 
         alert_sent = False
         if overall != "NORMAL" and monitor["alert_email"]:
             email_result = send_email_alert(monitor["alert_email"], scan_result)
             alert_sent   = email_result.get("sent", False)
             if alert_sent:
                 print(f"📧 Alert sent to {monitor['alert_email']}")
-
-        # 5. Update monitor stats
+ 
         update_after_run(monitor_id, overall, alert_sent)
-
-        print(f"\n✅ Auto-scan complete: '{monitor['name']}' → {overall}")
-        if not alert_sent and overall != "NORMAL":
-            print(f"   (anomaly found but no email configured)")
-
+        print(f"✅ Scan complete: '{monitor['name']}' → {overall}")
+ 
     except Exception as e:
         print(f"❌ Monitor '{monitor['name']}' failed: {e}")
         update_after_run(monitor_id, "ERROR")
+ 
+    finally:
+        # Clean up temp file if it was a Google Sheet
+        if temp_path and monitor.get("source_type") == "google_sheet":
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+                
 
 # ADD a monitor to the scheduler
 # Called when user creates a new monitor
