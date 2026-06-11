@@ -41,3 +41,21 @@ def create_monitor(
     monitor = response.data[0]
     print(f"✅ Monitor created: '{name}' for user {user_id[:8]}...")
     return monitor
+
+
+# GET monitors — scoped by user_id
+def get_all_monitors(user_id):
+    """
+    Returns only monitors belonging to this user.
+    Even though RLS handles this at DB level,
+    we also filter here as double protection.
+    """
+    response = (
+        supabase_admin
+        .table("monitors")
+        .select("*")
+        .eq("user_id", user_id)
+        .order("created_at", desc=True)
+        .execute()
+    )
+    return response.data or []
