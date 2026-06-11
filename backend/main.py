@@ -194,7 +194,7 @@ async def create_new_monitor(
     }
  
  
-# ROUTE 7 — Get all monitors
+# ROUTE 5 — Get all monitors
 @app.get("/monitors")
 def list_monitors(user = Depends(get_current_user)):
     monitors = get_all_monitors(user_id=user.id)
@@ -204,10 +204,13 @@ def list_monitors(user = Depends(get_current_user)):
     }
 
  
-# ROUTE 8 — Get one monitor
+# ROUTE 6 — Get one monitor
 @app.get("/monitors/{monitor_id}")
-def get_one_monitor(monitor_id: str):
-    monitor = get_monitor(monitor_id)
+def get_one_monitor(
+    monitor_id: str,
+    user = Depends(get_current_user)
+):
+    monitor = get_monitor(monitor_id, user_id=user.id)
     if not monitor:
         raise HTTPException(status_code=404, detail="Monitor not found.")
     return monitor
