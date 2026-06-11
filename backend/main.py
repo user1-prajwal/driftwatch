@@ -196,8 +196,8 @@ async def create_new_monitor(
  
 # ROUTE 7 — Get all monitors
 @app.get("/monitors")
-def list_monitors():
-    monitors = get_all_monitors()
+def list_monitors(user = Depends(get_current_user)):
+    monitors = get_all_monitors(user_id=user.id)
     return {
         "total":    len(monitors),
         "monitors": monitors,
