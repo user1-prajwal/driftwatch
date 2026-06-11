@@ -124,22 +124,6 @@ async def scan_file(
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-
-# ROUTE 3 — Get all past scan results
-
-@app.get("/results")
-def get_all_results():
-    if not scan_results:
-        return {"message": "No scans yet.", "scans": []}
-
-    sorted_scans = sorted(
-        scan_results.values(),
-        key=lambda x: x["scanned_at"],
-        reverse=True
-    )
-    return {"total_scans": len(sorted_scans), "scans": sorted_scans}
-
-
 # ROUTE 4 — Get one specific scan result
 
 @app.get("/results/{scan_id}")
