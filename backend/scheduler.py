@@ -20,16 +20,7 @@ scheduler = BackgroundScheduler()
 # Supports: Google Sheet URL or local CSV path
 
 def fetch_data(source_type, source_value):
-    """
-    Fetches data from wherever the user pointed us.
-    Returns a temp file path that detector can read.
-    """
-
     if source_type == "google_sheet":
-        # Convert Google Sheet URL to CSV export URL
-        # User pastes: https://docs.google.com/spreadsheets/d/ID/edit
-        # We convert to: https://docs.google.com/spreadsheets/d/ID/export?format=csv
-
         if "/edit" in source_value:
             csv_url = source_value.replace("/edit", "/export?format=csv")
             
@@ -39,26 +30,25 @@ def fetch_data(source_type, source_value):
             csv_url = source_value
         else:
             csv_url = source_value + "/export?format=csv"
-
-        print(f"📥 Fetching Google Sheet: {csv_url[:60]}...")
+ 
+        print(f"📥 Fetching Google Sheet...")
         response = requests.get(csv_url, timeout=30)
-
+ 
         if response.status_code != 200:
             raise Exception(f"Could not fetch Google Sheet. Status: {response.status_code}")
-
-        # Save to temp file
-        temp_path = f"data/temp_monitor_sheet.csv"
+ 
+        import uuid
+        temp_path = f"data/temp_monitor_{uuid.uuid4().hex[:8]}.csv"
         with open(temp_path, "wb") as f:
             f.write(response.content)
-
         return temp_path
-
+ 
     elif source_type == "csv_path":
-        # Local CSV file — just return the path
-        if not __import__("os").path.exists(source_value):
+        import os
+        if not os.path.exists(source_value):
             raise Exception(f"CSV file not found: {source_value}")
         return source_value
-
+ 
     else:
         raise Exception(f"Unknown source type: {source_type}")
 
