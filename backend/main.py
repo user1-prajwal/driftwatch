@@ -124,14 +124,6 @@ async def scan_file(
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-# ROUTE 4 — Get one specific scan result
-
-@app.get("/results/{scan_id}")
-def get_one_result(scan_id: str):
-    if scan_id not in scan_results:
-        raise HTTPException(status_code=404, detail=f"Scan '{scan_id}' not found.")
-    return scan_results[scan_id]
-
 
 # ROUTE 5 — List columns in a CSV
 
