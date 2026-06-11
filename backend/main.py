@@ -4,7 +4,7 @@ import shutil
 from datetime import datetime
 
 import pandas as pd
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from detector import run_driftwatch
@@ -125,7 +125,7 @@ async def scan_file(
             os.remove(temp_path)
 
 
-# ROUTE 5 — List columns in a CSV
+# ROUTE 3 — List columns in a CSV
 
 @app.post("/columns")
 async def get_columns(file: UploadFile = File(...)):
@@ -148,27 +148,34 @@ async def get_columns(file: UploadFile = File(...)):
             os.remove(temp_path)
             
                            
-# ROUTE 6 — Create a new monitor
-# User sets: source, schedule, email, sensitivity
+# ROUTE 4 — Create monitor (AUTH REQUIRED)
+
 @app.post("/monitors")
-def create_new_monitor(
+async def create_new_monitor(
     name:           str = Form(...),
-    source_type:    str = Form(...),   # "google_sheet" or "csv_path"
-    source_value:   str = Form(...),   # URL or file path
+    source_type:    str = Form(...),
+    source_value:   str = Form(...),
     date_column:    str = Form(...),
     context:        str = Form(...),
     sensitivity:    str = Form("medium"),
     alert_email:    str = Form(...),
-    interval_hours: int = Form(...),   # user picks: 1, 6, 12, 24, etc.
+    interval_hours: int = Form(...),
+    user = Depends(get_current_user)   # ← AUTH CHECK
 ):
+    """
+    Protected endpoint.
+    user_id taken from JWT token — never from request body.
+    User cannot create monitors for other users.
+    """
+ 
     if sensitivity not in ["low", "medium", "high"]:
         raise HTTPException(status_code=400, detail="sensitivity must be low/medium/high")
  
     if interval_hours < 1:
         raise HTTPException(status_code=400, detail="interval_hours must be at least 1")
  
-    # Save monitor to JSON
     monitor = create_monitor(
+        user_id        = user.id,   # from JWT, not from user input
         name           = name,
         source_type    = source_type,
         source_value   = source_value,
@@ -179,7 +186,6 @@ def create_new_monitor(
         interval_hours = interval_hours,
     )
  
-    # Add to scheduler immediately
     add_monitor_to_scheduler(monitor)
  
     return {
