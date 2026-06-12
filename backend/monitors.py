@@ -148,3 +148,13 @@ def resume_monitor(monitor_id, user_id):
         .execute()
     )
     return bool(response.data)
+
+def delete_monitor(monitor_id, user_id):
+    response = (
+        supabase_admin.table("monitors")
+        .delete()
+        .eq("id", monitor_id)
+        .eq("user_id", user_id)   # security check
+        .execute()
+    )
+    return bool(response.data)
