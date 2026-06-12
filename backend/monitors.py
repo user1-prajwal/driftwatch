@@ -104,3 +104,26 @@ def get_all_active_monitors():
         .execute()
     )
     return response.data or []
+
+
+
+# UPDATE monitor after a run
+ 
+def update_after_run(monitor_id, status, alert_sent=False):
+    """Called by scheduler after every scan."""
+ 
+    # First get current totals
+    monitor = get_monitor_by_id(monitor_id)
+    if not monitor:
+        return
+ 
+    update_data = {
+        "last_run":    datetime.now().isoformat(),
+        "last_status": status,
+        "total_runs":  monitor["total_runs"] + 1,
+    }
+ 
+    if alert_sent:
+        update_data["total_alerts"] = monitor["total_alerts"] + 1
+ 
+    supabase_admin.table("monitors").update(update_data).eq("id", monitor_id).execute()
