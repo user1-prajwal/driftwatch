@@ -12,7 +12,8 @@ from alerts import send_email_alert
 from auth import get_current_user
 from monitors import (
     create_monitor, get_all_monitors,
-    get_monitor, delete_monitor,
+    get_monitor, 
+    delete_monitor,
     pause_monitor, resume_monitor
 )
 from scheduler import (
@@ -215,10 +216,11 @@ def get_one_monitor(
         raise HTTPException(status_code=404, detail="Monitor not found.")
     return monitor
  
+ 
 # ROUTE 9 — Pause a monitor
 @app.post("/monitors/{monitor_id}/pause")
-def pause(monitor_id: str):
-    if not pause_monitor(monitor_id):
+def pause(monitor_id: str, user = Depends(get_current_user)):
+    if not pause_monitor(monitor_id, user_id=user.id):
         raise HTTPException(status_code=404, detail="Monitor not found.")
     remove_monitor_from_scheduler(monitor_id)
     return {"message": f"Monitor {monitor_id} paused."}
