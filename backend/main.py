@@ -246,23 +246,17 @@ def delete(monitor_id: str, user = Depends(get_current_user)):
 
 # ROUTE 12 — Manually trigger a monitor NOW
 @app.post("/monitors/{monitor_id}/run")
-def run_now(monitor_id: str):
-    """
-    Manually triggers a monitor scan immediately.
-    Useful for testing without waiting for schedule.
-    """
-    monitor = get_monitor(monitor_id)
+def run_now(monitor_id: str, user = Depends(get_current_user)):
+    monitor = get_monitor(monitor_id, user_id=user.id)
     if not monitor:
         raise HTTPException(status_code=404, detail="Monitor not found.")
-
+ 
     from scheduler import run_monitor
     import threading
-
-    # Run in background thread so API responds immediately
     thread = threading.Thread(target=run_monitor, args=[monitor_id])
     thread.start()
-
+ 
     return {
-        "message": f"Monitor '{monitor['name']}' triggered manually.",
+        "message":    f"Monitor '{monitor['name']}' triggered manually.",
         "monitor_id": monitor_id
     }
