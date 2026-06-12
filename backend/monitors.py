@@ -127,3 +127,14 @@ def update_after_run(monitor_id, status, alert_sent=False):
         update_data["total_alerts"] = monitor["total_alerts"] + 1
  
     supabase_admin.table("monitors").update(update_data).eq("id", monitor_id).execute()
+    
+
+def pause_monitor(monitor_id, user_id):
+    response = (
+        supabase_admin.table("monitors")
+        .update({"status": "paused"})
+        .eq("id", monitor_id)
+        .eq("user_id", user_id)   # security check
+        .execute()
+    )
+    return bool(response.data)
