@@ -228,10 +228,10 @@ def pause(monitor_id: str, user = Depends(get_current_user)):
 # ROUTE 10 — Resume a monitor
  
 @app.post("/monitors/{monitor_id}/resume")
-def resume(monitor_id: str):
-    if not resume_monitor(monitor_id):
+def resume(monitor_id: str, user = Depends(get_current_user)):
+    if not resume_monitor(monitor_id, user_id=user.id):
         raise HTTPException(status_code=404, detail="Monitor not found.")
-    monitor = get_monitor(monitor_id)
+    monitor = get_monitor(monitor_id, user_id=user.id)
     add_monitor_to_scheduler(monitor)
     return {"message": f"Monitor {monitor_id} resumed."}
  
