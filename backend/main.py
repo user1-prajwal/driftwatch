@@ -237,9 +237,9 @@ def resume(monitor_id: str, user = Depends(get_current_user)):
  
 # ROUTE 11 — Delete a monitor
 @app.delete("/monitors/{monitor_id}")
-def delete(monitor_id: str):
+def delete(monitor_id: str, user = Depends(get_current_user)):
     remove_monitor_from_scheduler(monitor_id)
-    if not delete_monitor(monitor_id):
+    if not delete_monitor(monitor_id, user_id=user.id):
         raise HTTPException(status_code=404, detail="Monitor not found.")
     return {"message": f"Monitor {monitor_id} deleted."}
 
