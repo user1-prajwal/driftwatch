@@ -68,6 +68,7 @@ async def scan_file(
     date_column: str        = Form(...),
     context:     str        = Form(...),
     sensitivity: str        = Form("medium"),
+    monitor_columns:  str        = Form(""),
 ):
     """
     Public endpoint — no login required.
@@ -87,11 +88,15 @@ async def scan_file(
         shutil.copyfileobj(file.file, buffer)
  
     try:
-        results  = run_driftwatch(
-            filepath    = temp_path,
-            date_column = date_column,
-            context     = context,
-            sensitivity = sensitivity,
+        # Parse comma-separated column names
+        selected = [c.strip() for c in monitor_columns.split(",") if c.strip()]
+
+        results = run_driftwatch(
+            filepath        = temp_path,
+            date_column     = date_column,
+            context         = context,
+            sensitivity     = sensitivity,
+            monitor_columns = selected if selected else None,
         )
  
         critical = [r for r in results if "CRITICAL" in r["status"]]
@@ -161,7 +166,8 @@ async def create_new_monitor(
     sensitivity:    str = Form("medium"),
     alert_email:    str = Form(...),
     interval_hours: int = Form(...),
-    user = Depends(get_current_user)   # ← AUTH CHECK
+    user = Depends(get_current_user),   # ← AUTH CHECK
+    monitor_columns: str = Form("")   # ← ADD THIS
 ):
     """
     Protected endpoint.
@@ -259,4 +265,53 @@ def run_now(monitor_id: str, user = Depends(get_current_user)):
     return {
         "message":    f"Monitor '{monitor['name']}' triggered manually.",
         "monitor_id": monitor_id
+    }
+    
+
+# Get scan history for a specific monitor
+@app.get("/monitors/{monitor_id}/history")
+def get_monitor_history(
+    monitor_id: str,
+    limit: int = 10,
+    user = Depends(get_current_user)
+):
+    """
+    Returns last N scan results for a monitor.
+    Used by the frontend to show run history graph
+    and detailed results.
+    """
+    import json
+    from supabase_client import supabase_admin
+
+    # First verify this monitor belongs to this user
+    from monitors import get_monitor
+    monitor = get_monitor(monitor_id, user_id=user.id)
+    if not monitor:
+        raise HTTPException(status_code=404, detail="Monitor not found.")
+
+    # Get scan history — most recent first
+    response = (
+        supabase_admin
+        .table("scan_history")
+        .select("*")
+        .eq("monitor_id", monitor_id)
+        .order("scanned_at", desc=True)
+        .limit(limit)
+        .execute()
+    )
+
+    history = response.data or []
+
+    # Parse column_results from JSON string back to list
+    for item in history:
+        if isinstance(item.get("column_results"), str):
+            try:
+                item["column_results"] = json.loads(item["column_results"])
+            except:
+                item["column_results"] = []
+
+    return {
+        "monitor_id": monitor_id,
+        "total":      len(history),
+        "history":    history,
     }
