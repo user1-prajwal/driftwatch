@@ -1,7 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 
-const API = "http://localhost:8000";
+// const API = "http://localhost:8000";
+const API="https://driftwatch-backend.onrender.com";
 
 const inputStyle = {
   width: "100%", padding: "11px 14px",
