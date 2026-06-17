@@ -484,7 +484,8 @@ function StepIndicator({ steps, current }) {
 function CreateMonitorForm({ session, onCreated, onCancel }) {
   const [step,          setStep]          = useState(0);
   const [name,          setName]          = useState("");
-  const [sourceType,    setSourceType]    = useState("google_sheet");
+  // const [sourceType,    setSourceType]    = useState("google_sheet");
+  const sourceType = "google_sheet";
   const [sourceValue,   setSourceValue]   = useState("");
   const [dateColumn,    setDateColumn]    = useState("");
   const [context,       setContext]       = useState("");
