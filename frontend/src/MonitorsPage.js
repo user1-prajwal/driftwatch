@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 
-const API = "http://localhost:8000";
+// const API = "http://localhost:8000";
+const API="https://driftwatch-backend.onrender.com";
 
 const authHeaders = (session) => ({
   headers: { Authorization: `Bearer ${session.access_token}` },
