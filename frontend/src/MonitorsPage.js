@@ -659,6 +659,7 @@ export default function MonitorsPage({ session, onBack, onLogout }) {
     finally { setLoading(false); }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { loadMonitors(); }, []);
 
   return (
