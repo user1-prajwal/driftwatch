@@ -13,6 +13,7 @@ def create_monitor(
     sensitivity,
     alert_email,
     interval_hours,
+    monitor_columns="",
 ):
     """
     Saves a new monitor to Supabase.
@@ -31,6 +32,7 @@ def create_monitor(
         "alert_email":   alert_email,
         "interval_hours":interval_hours,
         "status":        "active",
+        "monitor_columns": monitor_columns,
     }
  
     response = supabase_admin.table("monitors").insert(data).execute()
@@ -158,3 +160,5 @@ def delete_monitor(monitor_id, user_id):
         .execute()
     )
     return bool(response.data)
+
+
