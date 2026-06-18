@@ -352,7 +352,7 @@ export default function ScanPage({ onBack }) {
         <button onClick={onBack} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#64748b", fontSize: 13, display: "flex", alignItems: "center", gap: 6, marginRight: 16 }}>← Back</button>
         <span style={{ fontSize: 20 }}>🌊</span>
         <span style={{ fontWeight: 800, fontSize: 16, color: "#1e293b", marginLeft: 8 }}>DriftWatch</span>
-        <span style={{ marginLeft: 12, fontSize: 13, color: "#94a3b8" }}>/ One-time Scan</span>
+        {/* <span style={{ marginLeft: 12, fontSize: 13, color: "#94a3b8" }}>/ One-time Scan</span> */}
       </div>
 
       <div style={{ maxWidth: 640, margin: "0 auto", padding: "36px 20px" }}>
