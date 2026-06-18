@@ -1,4 +1,4 @@
-import smtplib
+# import smtplib
 import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -137,16 +137,21 @@ Open DriftWatch to see full details and AI explanation.
     msg.attach(MIMEText(html,  "html"))
 
     try:
+        import resend
+        resend.api_key = os.getenv("RESEND_API_KEY")
+
         print(f"📧 Sending alert to {recipient_email}...")
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(SENDER_EMAIL, SENDER_PASSWORD)
-            server.sendmail(SENDER_EMAIL, recipient_email, msg.as_string())
+        
+        response = resend.Emails.send({
+            "from":    "DriftWatch <onboarding@resend.dev>",
+            "to":      [recipient_email],
+            "subject": subject,
+            "html":    html,
+            "text":    plain,
+        })
+
         print(f"✅ Email sent to {recipient_email}")
         return {"sent": True, "recipient": recipient_email, "subject": subject}
-
-    except smtplib.SMTPAuthenticationError:
-        print("❌ Email auth failed.")
-        return {"sent": False, "reason": "Authentication failed"}
 
     except Exception as e:
         print(f"❌ Email error: {e}")
