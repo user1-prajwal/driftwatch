@@ -672,7 +672,7 @@ export default function MonitorsPage({ session, onBack, onLogout }) {
         <button onClick={onBack} style={{ background: "transparent", border: "none", cursor: "pointer", color: "#64748b", fontSize: 13, display: "flex", alignItems: "center", gap: 6, marginRight: 16 }}>← Back</button>
         <span style={{ fontSize: 20 }}>🌊</span>
         <span style={{ fontWeight: 800, fontSize: 16, color: "#1e293b", marginLeft: 8 }}>DriftWatch</span>
-        <span style={{ marginLeft: 12, fontSize: 13, color: "#94a3b8" }}>/ Auto Monitors</span>
+        {/* <span style={{ marginLeft: 12, fontSize: 13, color: "#94a3b8" }}>/ Auto Monitors</span> */}
         <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ fontSize: 13, color: "#64748b" }}>👤 {session?.user?.email}</div>
           <button onClick={onLogout} style={{ padding: "6px 14px", background: "#f8fafc", color: "#64748b", border: "1.5px solid #e2e8f0", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
