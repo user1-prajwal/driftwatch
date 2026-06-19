@@ -105,7 +105,7 @@ Open DriftWatch to see full details and AI explanation.
 
       <!-- CTA button -->
       <div style="text-align:center;">
-        <a href="http://localhost:3000"
+        <a href="https://driftwatch-lovat.vercel.app/"
            style="display:inline-block;padding:13px 32px;background:#6366f1;color:#fff;text-decoration:none;border-radius:10px;font-size:15px;font-weight:700;">
           View Full Details →
         </a>
