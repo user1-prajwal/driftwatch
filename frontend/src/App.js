@@ -12,6 +12,7 @@ const GLOBAL_CSS = `
 .dw{
   --white:#FFFFFF;
   --ink:#0B0E14;
+  --slate-950:#1FB6A6;
   --slate-900:#0F172A;
   --slate-700:#344054;
   --slate-600:#475467;
@@ -52,7 +53,7 @@ const GLOBAL_CSS = `
 .section{padding:clamp(64px,9vw,128px) 0;}
 .bg-alt{background:#F0F2F7;}
 
-.h1{font-size:clamp(36px,5.4vw,64px);font-weight:800;letter-spacing:-0.03em;line-height:1.04;color:var(--slate-900);margin:0;}
+.h1{font-size:clamp(36px,5.4vw,64px);font-weight:800;letter-spacing:-0.03em;line-height:1.04;color:var(--slate-950);margin:0;}
 .h2{font-size:clamp(28px,3.6vw,42px);font-weight:800;letter-spacing:-0.025em;line-height:1.16;color:var(--slate-900);margin:0;}
 .h3{font-size:19px;font-weight:700;letter-spacing:-0.01em;color:var(--slate-900);margin:0;}
 .lede{font-size:clamp(16px,1.6vw,18px);color:var(--slate-500);line-height:1.7;margin:0;}
@@ -86,7 +87,7 @@ const GLOBAL_CSS = `
 .btn:focus-visible,.nav-link:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--indigo);outline-offset:3px;}
 
 /* layout grids */
-.hero-pad{padding-top:clamp(120px,18vw,110px);padding-bottom:clamp(48px,8vw,90px);}
+.hero-pad{padding-top:clamp(120px,18vw,160px);padding-bottom:clamp(48px,8vw,90px);}
 .hero-grid{display:grid;grid-template-columns:1fr;gap:64px;align-items:center;}
 @media(min-width:980px){.hero-grid{grid-template-columns:1.08fr .92fr;gap:40px;}}
 .grid-3{display:grid;grid-template-columns:1fr;gap:20px;}
@@ -98,9 +99,9 @@ const GLOBAL_CSS = `
 @media(min-width:760px){.footer-grid{grid-template-columns:2fr 1fr 1fr;}}
 
 /* cards */
-.card{background:#fff;border:1px solid var(--slate-200);border-radius:16px;box-shadow:0 2px 10px rgba(16,24,40,.06),0 0 0 1px rgba(16,24,40,.02);}
+.card{background:#fff;border:1px solid var(--slate-200);border-radius:16px;box-shadow:0 2px 10px hsla(220, 43%, 11%, 0.06),0 0 0 1px rgba(16,24,40,.02);}
 .feature-card{padding:26px 24px;transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;}
-.feature-card:hover{transform:translateY(-4px);border-color:var(--indigo-100);box-shadow:0 18px 36px rgba(15,23,42,.06);}
+.feature-card:hover{transform:translateY(-4px);border-color:var(--indigo-100);box-shadow:0 18px 36px hsla(222, 47%, 11%, 0.06);}
 .icon-badge{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;}
 
 /* pills */
@@ -119,15 +120,15 @@ const GLOBAL_CSS = `
 
 /* hero dashboard mockup */
 .hero-visual{position:relative;width:100%;max-width:480px;margin:0 auto;padding:30px 14px 64px;}
-.dash-card{position:relative;z-index:2;background:rgba(255,255,255,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(228,231,236,.9);border-radius:20px;padding:22px;box-shadow:0 24px 64px -12px rgba(15,23,42,.18);}
-.float-card{position:absolute;z-index:3;background:#fff;border:1px solid var(--slate-200);border-radius:14px;box-shadow:0 16px 40px -8px rgba(15,23,42,.16);padding:14px 16px;}
+.dash-card{position:relative;z-index:2;background:rgba(255,255,255,.86);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(228,231,236,.9);border-radius:20px;padding:22px;box-shadow:0 24px 64px -12px #1FB6A6;} 
+.float-card{position:absolute;z-index:3;background:#fff;border:1px solid var(--slate-200);border-radius:14px;box-shadow:0 16px 40px -8px #0f172a29;padding:14px 16px;}
 .alert-card{top:-18px;right:-6px;width:208px;animation:float 6s ease-in-out infinite;}
 .toast-card{bottom:-22px;left:-10px;width:212px;}
 @keyframes float{0%,100%{transform:translateY(0) rotate(-2deg);}50%{transform:translateY(-9px) rotate(-2deg);}}
 @media(max-width:600px){
   .hero-visual{display:flex;flex-direction:column;gap:14px;padding:8px 2px;max-width:380px;}
   .glow{display:none;}
-  .float-card{position:static;width:100%;animation:none;box-shadow:0 8px 20px -6px rgba(15,23,42,.12);}
+  .float-card{position:static;width:100%;animation:none;box-shadow:0 8px 20px -6px #0f172a1f;}
 }
 .chart-line{stroke-dasharray:480;stroke-dashoffset:480;animation:draw 1.5s cubic-bezier(.4,0,.2,1) forwards .5s;}
 @keyframes draw{to{stroke-dashoffset:0;}}
@@ -965,7 +966,7 @@ function LandingPage({ onStart }) {
                 Run a free scan
               </button>
             </div>
-            <p
+            {/* <p
               style={{
                 fontSize: 12.5,
                 color: "var(--slate-400)",
@@ -973,7 +974,7 @@ function LandingPage({ onStart }) {
               }}
             >
               No credit card required · one-time scans need no login
-            </p>
+            </p> */}
 
             <div className="metrics-row">
               {[
