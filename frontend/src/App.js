@@ -197,7 +197,7 @@ const Icon = {
   activity: makeIcon(
     <polyline points="2 14 7.5 14 10 7 14 19 16.5 14 22 14" />,
   ),
-  mail: makeIcon(
+  Mail: makeIcon(
     <>
       <rect x="2.5" y="5" width="19" height="14" rx="2.5" />
       <path d="m3 6.5 9 6.5 9-6.5" />
@@ -221,7 +221,7 @@ const Icon = {
       <polyline points="21 10 21 17 14 17" />
     </>,
   ),
-  alertTriangle: makeIcon(
+  AlertTriangle: makeIcon(
     <>
       <path d="M12 3.5 22 20H2L12 3.5Z" />
       <path d="M12 10v4" />
@@ -250,10 +250,10 @@ const Icon = {
       <path d="m15.5 12.5 2 2 3.5-3.5" />
     </>,
   ),
-  arrowRight: makeIcon(<path d="M4 12h16M13 5l7 7-7 7" />, {
+  ArrowRight: makeIcon(<path d="M4 12h16M13 5l7 7-7 7" />, {
     strokeWidth: 1.8,
   }),
-  github: makeIcon(
+  Github: makeIcon(
     <path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.69c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.64-1.33-2.22-.25-4.56-1.11-4.56-4.93 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.83-2.34 4.68-4.57 4.92.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" />,
     { filled: true },
   ),
@@ -705,7 +705,7 @@ function HeroVisual() {
               flexShrink: 0,
             }}
           >
-            <Icon.alertTriangle size={15} />
+            <Icon.AlertTriangle size={15} />
           </div>
           <div>
             <div
@@ -746,7 +746,7 @@ function HeroVisual() {
               flexShrink: 0,
             }}
           >
-            <Icon.mail size={14} />
+            <Icon.Mail size={14} />
           </div>
           <div>
             <div
@@ -824,7 +824,7 @@ function LandingPage({ onStart }) {
     },
     {
       n: "03",
-      icon: Icon.mail,
+      icon: Icon.Mail,
       tone: "indigo",
       title: "Get a clear alert",
       desc: "When something looks off, you get an email that explains what changed, why it matters, and what to check first.",
@@ -857,7 +857,7 @@ function LandingPage({ onStart }) {
       desc: "Every alert comes with a clear, written explanation of what changed and why it likely happened.",
     },
     {
-      icon: Icon.mail,
+      icon: Icon.Mail,
       tone: "emerald",
       title: "Smart email alerts",
       desc: "You're only emailed when something needs attention. Normal days stay quiet.",
@@ -956,7 +956,7 @@ function LandingPage({ onStart }) {
                 className="btn btn-primary"
                 onClick={() => onStart("monitor")}
               >
-                Start monitoring <Icon.arrowRight size={16} />
+                Start monitoring <Icon.ArrowRight size={16} />
               </button>
               <button
                 className="btn btn-outline"
@@ -1070,7 +1070,7 @@ function LandingPage({ onStart }) {
                   </Reveal>
                   {i < steps.length - 1 && (
                     <div className="step-connector">
-                      <Icon.arrowRight size={18} />
+                      <Icon.ArrowRight size={18} />
                     </div>
                   )}
                 </Fragment>
@@ -1243,7 +1243,7 @@ function LandingPage({ onStart }) {
                   className="btn btn-on-dark"
                   onClick={() => onStart("monitor")}
                 >
-                  Start monitoring <Icon.arrowRight size={16} />
+                  Start monitoring <Icon.ArrowRight size={16} />
                 </button>
                 <button
                   className="btn btn-outline-dark"
@@ -1294,8 +1294,7 @@ function LandingPage({ onStart }) {
                   rel="noreferrer"
                   className="btn btn-sm btn-outline-dark"
                 >
-                  {/* <Icon.github size={14} /> GitHub */}
-                  GitHub
+                  <Icon.Github size={14} /> GitHub
                 </a>
                 <a
                   href="https://driftwatch-backend.onrender.com/docs"
@@ -1303,8 +1302,7 @@ function LandingPage({ onStart }) {
                   rel="noreferrer"
                   className="btn btn-sm btn-outline-dark"
                 >
-                  API docs
-                  {/* <Icon.arrowRight size={13} /> */}
+                  API docs<Icon.ArrowRight size={13} />
                 </a>
               </div>
             </div>
