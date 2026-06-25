@@ -5,8 +5,8 @@ import {
   PieChart, Pie, Cell,
 } from "recharts";
 
-const API = "http://localhost:8000";
-// const API = "https://driftwatch-backend.onrender.com";
+// const API = "http://localhost:8000";
+const API = "https://driftwatch-backend.onrender.com";
 
 const authHeaders = (session) => ({
   headers: { Authorization: `Bearer ${session.access_token}` },
