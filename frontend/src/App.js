@@ -1117,11 +1117,11 @@ function LandingPage({ onStart }) {
               <button className="btn btn-primary" onClick={() => onStart("monitor")}>Start monitoring <Icon.ArrowRight size={16}/></button>
               <button className="btn btn-outline" onClick={() => onStart("monitor")}>Sign in to dashboard</button>
             </div>
-            <div className="metrics-row">
+            {/* <div className="metrics-row">
               {[{n:"2 min",l:"To your first live monitor"},{n:"24/7",l:"Continuous monitoring"},{n:"₹0",l:"To get started"}].map(m=>(
                 <div key={m.l}><div className="metric-num">{m.n}</div><div className="metric-label">{m.l}</div></div>
               ))}
-            </div>
+            </div> */}
           </div>
           <div ref={heroScanRef} id="dw-scan">
             <HeroScanTool onScanComplete={handleScanComplete}/>
