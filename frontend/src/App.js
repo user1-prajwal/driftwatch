@@ -1,3 +1,6 @@
+
+
+
 import { useState, useRef, useEffect, Fragment } from "react";
 import MonitorsPage from "./MonitorsPage";
 import ScanPage from "./ScanPage";
@@ -8,7 +11,9 @@ import axios from "axios";
 const SCAN_API = "http://localhost:8000";
 // const SCAN_API = "https://driftwatch-backend.onrender.com";
 
+
 // GLOBAL STYLES
+
 
 const GLOBAL_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
@@ -196,6 +201,43 @@ const GLOBAL_CSS = `
 .result-col-card{background:#fff;border:1px solid var(--slate-200);border-radius:14px;overflow:hidden;margin-bottom:10px;box-shadow:0 1px 6px rgba(16,24,40,.04);}
 .ai-insight{background:var(--indigo-50);border-radius:10px;padding:13px 15px;margin-top:12px;}
 
+
+/* showcase panel — unifies diagram + timeline into one composition */
+.showcase-panel{
+  position:relative; overflow:hidden;
+  background:linear-gradient(135deg,#FAFBFF 0%,#F5F3FF 45%,#F0FDF9 100%);
+  border:1px solid var(--slate-200);
+  border-radius:32px;
+  padding:clamp(28px,4vw,52px);
+  box-shadow:0 24px 64px -20px rgba(79,70,229,.14);
+}
+.showcase-grid{
+  position:relative; z-index:1;
+  display:grid; grid-template-columns:1fr auto 1fr;
+  gap:40px; align-items:center;
+}
+@media(max-width:900px){
+  .showcase-grid{ grid-template-columns:1fr; gap:36px; }
+  .showcase-divider{ display:none; }
+}
+.showcase-divider{
+  width:1px; align-self:stretch;
+  background:linear-gradient(to bottom,transparent,var(--slate-200) 15%,var(--slate-200) 85%,transparent);
+}
+.showcase-badge{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; border-radius:50%;
+  color:#fff; font-size:11px; font-weight:800;
+  box-shadow:0 4px 12px rgba(0,0,0,.18), 0 0 0 4px #fff;
+  flex-shrink:0;
+}
+.showcase-badge-label{
+  font-size:11.5px; font-weight:700;
+  background:#fff; padding:3px 9px; border-radius:999px;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  white-space:nowrap;
+}
+
 @media(prefers-reduced-motion:reduce){
   .reveal{transition:none!important;opacity:1!important;transform:none!important;}
   .alert-card{animation:none!important;}
@@ -203,7 +245,9 @@ const GLOBAL_CSS = `
 }
 `;
 
+
 // ICONS
+
 
 function makeIcon(children, opts={}) {
   const sw = opts.strokeWidth || 1.6;
@@ -221,11 +265,11 @@ function makeIcon(children, opts={}) {
 }
 
 const Icon = {
-  plug:          makeIcon(<><path d="M9 2v4M15 2v4M7.5 8h9a1.5 1.5 0 0 1 1.5 1.5v2A5.5 5.5 0 0 1 12.5 17h-1A5.5 5.5 0 0 1 6 11.5v-2A1.5 1.5 0 0 1 7.5 8Z"/><path d="M12 17v3M9 22h6"/></>),
+  Plug:          makeIcon(<><path d="M9 2v4M15 2v4M7.5 8h9a1.5 1.5 0 0 1 1.5 1.5v2A5.5 5.5 0 0 1 12.5 17h-1A5.5 5.5 0 0 1 6 11.5v-2A1.5 1.5 0 0 1 7.5 8Z"/><path d="M12 17v3M9 22h6"/></>),
   Activity:      makeIcon(<polyline points="2 14 7.5 14 10 7 14 19 16.5 14 22 14"/>),
-  mail:          makeIcon(<><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="m3 6.5 9 6.5 9-6.5"/></>),
-  cpu:           makeIcon(<><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 10h4v4h-4z"/></>),
-  clock:         makeIcon(<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></>),
+  Mail:          makeIcon(<><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="m3 6.5 9 6.5 9-6.5"/></>),
+  Cpu:           makeIcon(<><rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 10h4v4h-4z"/></>),
+  Clock:         makeIcon(<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></>),
   trendDown:     makeIcon(<><polyline points="3 6 10 13 14 9 21 17"/><polyline points="21 10 21 17 14 17"/></>),
   AlertTriangle: makeIcon(<><path d="M12 3.5 22 20H2L12 3.5Z"/><path d="M12 10v4"/><circle cx="12" cy="17.2" r="0.4" fill="currentColor" stroke="none"/></>),
   Shield:        makeIcon(<path d="M12 3.5 19.5 6.3v5.6c0 4.7-3.1 7.6-7.5 9-4.4-1.4-7.5-4.3-7.5-9V6.3L12 3.5Z"/>),
@@ -252,19 +296,21 @@ function Logo({ size=26 }) {
   );
 }
 
+
 // UTILITIES
 
-// function smoothPath(points) {
-//   if (points.length < 2) return "";
-//   let d = `M ${points[0][0]} ${points[0][1]}`;
-//   for (let i = 0; i < points.length - 1; i++) {
-//     const p0 = points[i===0?0:i-1], p1=points[i], p2=points[i+1], p3=points[i+2<points.length?i+2:i+1];
-//     const cp1x=p1[0]+(p2[0]-p0[0])/6, cp1y=p1[1]+(p2[1]-p0[1])/6;
-//     const cp2x=p2[0]-(p3[0]-p1[0])/6, cp2y=p2[1]-(p3[1]-p1[1])/6;
-//     d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2[0]} ${p2[1]}`;
-//   }
-//   return d;
-// }
+
+function smoothPath(points) {
+  if (points.length < 2) return "";
+  let d = `M ${points[0][0]} ${points[0][1]}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i===0?0:i-1], p1=points[i], p2=points[i+1], p3=points[i+2<points.length?i+2:i+1];
+    const cp1x=p1[0]+(p2[0]-p0[0])/6, cp1y=p1[1]+(p2[1]-p0[1])/6;
+    const cp2x=p2[0]-(p3[0]-p1[0])/6, cp2y=p2[1]-(p3[1]-p1[1])/6;
+    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2[0]} ${p2[1]}`;
+  }
+  return d;
+}
 
 function useReveal(threshold=0.15) {
   const ref = useRef(null);
@@ -333,7 +379,9 @@ function FeatureCard({ icon, tone, title, desc, delay=0 }) {
 //   );
 // }
 
+
 // NAV
+
 
 function Nav({ onStart, refs, onTryScan }) {
   const [scrolled, setScrolled] = useState(false);
@@ -367,9 +415,13 @@ function Nav({ onStart, refs, onTryScan }) {
   );
 }
 
+
 // HERO DASHBOARD MOCKUP
 
+
+
 // STATUS UTILITIES
+
 
 function statusMeta(s) {
   const st = s || "";
@@ -411,8 +463,10 @@ function scoreLabel(n) {
   return             { text:"Critical Drift",  color:"#EF4444" };
 }
 
+
 // COLUMN CARD
 // fixed progress bars · no duplicate badges · collapsible RCA
+
 
 function ColumnCard({ col }) {
   const [rcaOpen, setRcaOpen] = useState(false);
@@ -582,7 +636,9 @@ function ColumnCard({ col }) {
   );
 }
 
+
 // HEALTH SCORE HEADER
+
 
 function HealthScoreHeader({ result, score, execTime }) {
   const lbl      = scoreLabel(score);
@@ -632,7 +688,9 @@ function HealthScoreHeader({ result, score, execTime }) {
   );
 }
 
+
 // FULL RESULTS DASHBOARD
+
 
 function FullResultsDashboard({ result, execTime, onStart }) {
   const score = calcScore(result);
@@ -670,8 +728,107 @@ function FullResultsDashboard({ result, execTime, onStart }) {
   );
 }
 
+
+// DASHBOARD DIAGRAM  (used in "How it works")
+
+
+function DashboardDiagram() {
+  const points = [[10,72],[46,60],[82,66],[118,54],[154,62],[190,56],[226,118],[262,104],[300,98]];
+  const linePath = smoothPath(points);
+  const areaPath = `${linePath} L 300 134 L 10 134 Z`;
+  const anomaly  = points[6];
+  const R=28, C=2*Math.PI*R, score=86, offset=C-(score/100)*C;
+
+  return (
+    <div style={{ position:"relative", width:"100%", maxWidth:440, margin:"0 auto", paddingBottom:56 }}>
+      {/* glow */}
+      <div className="glow" style={{ width:320, height:320, top:-40, right:-30, opacity:.6 }}/>
+
+      {/* main card */}
+      <div className="dash-card">
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <div style={{ fontWeight:700, fontSize:14, color:"var(--slate-900)" }}>Daily Sales Monitor</div>
+            <div className="mono" style={{ fontSize:11, color:"var(--slate-400)", marginTop:3 }}>Google Sheet · every 24h</div>
+          </div>
+          <span className="pill pill-emerald"><span className="pill-dot" style={{background:"currentColor"}}/>Active</span>
+        </div>
+
+        <svg viewBox="0 0 310 134" style={{ width:"100%", height:"auto", marginTop:14 }}>
+          <defs>
+            <linearGradient id="dgAreaFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#4F46E5" stopOpacity="0.18"/>
+              <stop offset="100%" stopColor="#4F46E5" stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          <line x1="0" y1="134" x2="310" y2="134" stroke="var(--slate-200)" strokeWidth="1"/>
+          <path d={areaPath} fill="url(#dgAreaFill)" stroke="none"/>
+          <path d={linePath} fill="none" stroke="#4F46E5" strokeWidth="2.25" strokeLinecap="round" className="chart-line"/>
+          <line x1={anomaly[0]} y1={anomaly[1]} x2={anomaly[0]} y2="134" stroke="#EF4444" strokeWidth="1" strokeDasharray="3 3" opacity="0.5"/>
+          <circle cx={anomaly[0]} cy={anomaly[1]} r="4.5" fill="#fff" stroke="#EF4444" strokeWidth="2.25"/>
+        </svg>
+        <div style={{ display:"flex", justifyContent:"space-between" }}>
+          <span className="mono" style={{ fontSize:10, color:"var(--slate-400)" }}>Mon</span>
+          <span className="mono" style={{ fontSize:10, color:"var(--slate-400)" }}>Sun</span>
+        </div>
+
+        <div style={{ display:"grid", gridTemplateColumns:"auto 1fr 1fr", gap:12, marginTop:16, paddingTop:16, borderTop:"1px solid var(--slate-100)", alignItems:"center" }}>
+          <div style={{ position:"relative", width:56, height:56 }}>
+            <svg width="56" height="56" viewBox="0 0 64 64">
+              <circle cx="32" cy="32" r={R} fill="none" stroke="var(--slate-100)" strokeWidth="6"/>
+              <circle cx="32" cy="32" r={R} fill="none" stroke="#4F46E5" strokeWidth="6"
+                strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C}
+                className="ring-progress" style={{"--ring-offset":offset}}/>
+            </svg>
+            <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <span style={{ fontWeight:800, fontSize:13, color:"var(--slate-900)" }}>86</span>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize:11, color:"var(--slate-400)" }}>Health score</div>
+            <div style={{ fontSize:12, fontWeight:600, color:"var(--slate-700)", marginTop:2 }}>1 metric flagged</div>
+          </div>
+          <div>
+            <div style={{ fontSize:11, color:"var(--slate-400)" }}>Rows scanned</div>
+            <div className="mono" style={{ fontSize:13, fontWeight:700, color:"var(--slate-900)", marginTop:2 }}>12,480</div>
+          </div>
+        </div>
+      </div>
+
+      {/* alert float */}
+      <div className="float-card alert-card">
+        <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+          <div style={{ width:26, height:26, borderRadius:7, background:"var(--amber-50)", color:"#B45309", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <Icon.AlertTriangle size={14}/>
+          </div>
+          <div>
+            <div style={{ fontSize:12, fontWeight:700, color:"var(--slate-900)" }}>Anomaly detected</div>
+            <div style={{ fontSize:11, color:"var(--slate-500)", marginTop:1, lineHeight:1.4 }}>daily_sales is 83% below average</div>
+          </div>
+        </div>
+      </div>
+
+      {/* email float */}
+      <div className="float-card toast-card">
+        <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+          <div style={{ width:26, height:26, borderRadius:7, background:"var(--indigo-50)", color:"var(--indigo)", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+            <Icon.Mail size={13}/>
+          </div>
+          <div>
+            <div style={{ fontSize:11.5, fontWeight:700, color:"var(--slate-900)" }}>Alert email sent</div>
+            <div className="mono" style={{ fontSize:10, color:"var(--slate-400)", marginTop:1 }}>09:02 AM · ops@company.com</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 // HERO SCAN TOOL  (replaces static HeroVisual)
 // upload → columns → configure → processing → done
+
 
 function HeroScanTool({ onScanComplete }) {
   const [stage,  setStage]  = useState("upload");
@@ -883,7 +1040,9 @@ function HeroScanTool({ onScanComplete }) {
   );
 }
 
+
 // LANDING PAGE
+
 
 function LandingPage({ onStart }) {
   const howRef       = useRef(null);
@@ -906,37 +1065,37 @@ function LandingPage({ onStart }) {
   };
 
   const problems = [
-    { icon:Icon.activity, title:"Nobody is watching",          desc:"A sync fails, a column goes blank, a number triples overnight — and nothing tells you until someone notices the report looks wrong." },
-    { icon:Icon.clock,    title:"Caught too late",             desc:"By the time a stakeholder flags a broken chart in a meeting, the bad data has already shaped a decision." },
+    { icon:Icon.Activity, title:"Nobody is watching",          desc:"A sync fails, a column goes blank, a number triples overnight — and nothing tells you until someone notices the report looks wrong." },
+    { icon:Icon.Clock,    title:"Caught too late",             desc:"By the time a stakeholder flags a broken chart in a meeting, the bad data has already shaped a decision." },
     { icon:Icon.sliders,  title:"Manual checks don't scale",   desc:"Eyeballing every sheet every morning works for a while — until it doesn't, and the checks quietly stop happening." },
   ];
 
   const steps = [
-    { n:"01", icon:Icon.plug,     tone:"indigo",  title:"Connect your source",            desc:"Link a Google Sheet or upload a CSV. No code, no integration work, no waiting on engineering." },
-    { n:"02", icon:Icon.activity, tone:"emerald", title:"DriftWatch watches continuously", desc:"On your schedule, every dataset is checked against its own history for unusual trends and outliers." },
-    { n:"03", icon:Icon.mail,     tone:"indigo",  title:"Get a clear alert",              desc:"When something looks off, you get an email explaining what changed, why it matters, and what to check first." },
+    { n:"01", icon:Icon.Plug,     tone:"indigo",  title:"Connect your source",            desc:"Link a Google Sheet or upload a CSV. No code, no integration work, no waiting on engineering." },
+    { n:"02", icon:Icon.Activity, tone:"emerald", title:"DriftWatch watches continuously", desc:"On your schedule, every dataset is checked against its own history for unusual trends and outliers." },
+    { n:"03", icon:Icon.Mail,     tone:"indigo",  title:"Get a clear alert",              desc:"When something looks off, you get an email explaining what changed, why it matters, and what to check first." },
   ];
 
   const features = [
-    { icon:Icon.activity,  tone:"indigo",  title:"Automated monitoring",      desc:"Schedule checks from hourly to weekly. DriftWatch runs in the background so you don't have to remember to look." },
+    { icon:Icon.Activity,  tone:"indigo",  title:"Automated monitoring",      desc:"Schedule checks from hourly to weekly. DriftWatch runs in the background so you don't have to remember to look." },
     { icon:Icon.fileSheet, tone:"emerald", title:"One-time scans",            desc:"Upload a CSV and get a full anomaly report in seconds. No login, nothing stored." },
     { icon:Icon.barChart,  tone:"indigo",  title:"Run history",               desc:"Every check is logged on a timeline, so you can spot a pattern, not just a single incident." },
-    { icon:Icon.cpu,       tone:"amber",   title:"AI-generated explanations", desc:"Every alert comes with a clear explanation of what changed and why it likely happened." },
-    { icon:Icon.mail,      tone:"emerald", title:"Smart email alerts",        desc:"You're only emailed when something needs attention. Normal days stay quiet." },
+    { icon:Icon.Cpu,       tone:"amber",   title:"AI-generated explanations", desc:"Every alert comes with a clear explanation of what changed and why it likely happened." },
+    { icon:Icon.Mail,      tone:"emerald", title:"Smart email alerts",        desc:"You're only emailed when something needs attention. Normal days stay quiet." },
     { icon:Icon.sliders,   tone:"slate",   title:"Full control, anytime",     desc:"Pause, resume, or delete any monitor in a click. Nothing runs without your say." },
   ];
 
   const detectors = [
     { icon:Icon.trendDown, tone:"indigo",  tag:"Statistical drift · z-score baseline",    title:"Numeric trend detection",     desc:"Flags when a number moves far outside its normal range, using a baseline built from that column's own history." },
     { icon:Icon.barChart,  tone:"emerald", tag:"Distribution shift · chi-square test",     title:"Category shift detection",    desc:"Flags when the mix of values in a column changes shape — like a status field suddenly skewing toward one value." },
-    { icon:Icon.cpu,       tone:"amber",   tag:"Multivariate outliers · isolation forest", title:"Row-level anomaly detection", desc:"Flags rows that look suspicious across several columns at once, even when each column looks normal individually." },
+    { icon:Icon.Cpu,       tone:"amber",   tag:"Multivariate outliers · isolation forest", title:"Row-level anomaly detection", desc:"Flags rows that look suspicious across several columns at once, even when each column looks normal individually." },
   ];
 
   const securityItems = [
     { icon:Icon.lock,      tag:"PostgreSQL Row-Level Security", title:"Your data never crosses accounts",  desc:"Isolation enforced inside the database itself, not just in app code." },
     { icon:Icon.key,       tag:"JWT-based authentication",      title:"Every request is verified",         desc:"Nothing reaches your data without proving it's really you on every single call." },
     { icon:Icon.userCheck, tag:"Google OAuth",                  title:"Sign in your way",                  desc:"Continue with Google or email. No separate password for us to store." },
-    { icon:Icon.shield,    tag:"Stateless processing",          title:"Scans leave nothing behind",        desc:"One-time scans run entirely in memory. Nothing is written to any database." },
+    { icon:Icon.Shield,    tag:"Stateless processing",          title:"Scans leave nothing behind",        desc:"One-time scans run entirely in memory. Nothing is written to any database." },
   ];
 
   return (
@@ -956,13 +1115,13 @@ function LandingPage({ onStart }) {
             </p>
             <div style={{ display:"flex", flexWrap:"wrap", gap:14, marginTop:32 }}>
               <button className="btn btn-primary" onClick={() => onStart("monitor")}>Start monitoring <Icon.ArrowRight size={16}/></button>
-              {/* <button className="btn btn-outline" onClick={scrollToScan}>Try it live — no login needed</button> */}
+              <button className="btn btn-outline" onClick={() => onStart("monitor")}>Sign in to dashboard</button>
             </div>
-            {/* <div className="metrics-row">
+            <div className="metrics-row">
               {[{n:"2 min",l:"To your first live monitor"},{n:"24/7",l:"Continuous monitoring"},{n:"₹0",l:"To get started"}].map(m=>(
                 <div key={m.l}><div className="metric-num">{m.n}</div><div className="metric-label">{m.l}</div></div>
               ))}
-            </div> */}
+            </div>
           </div>
           <div ref={heroScanRef} id="dw-scan">
             <HeroScanTool onScanComplete={handleScanComplete}/>
@@ -987,28 +1146,91 @@ function LandingPage({ onStart }) {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS */}
+      {/* ── HOW IT WORKS — one unified showcase panel: annotated diagram + timeline */}
       <section className="section" ref={howRef} style={{ scrollMarginTop:84 }}>
         <div className="container">
           <Reveal><SectionHead title="Set up once. DriftWatch does the rest." desc="Three steps between you and never finding out about a data problem the hard way."/></Reveal>
-          <div className="step-row">
-            {steps.map((s,i)=>{
-              const accent=s.tone==="emerald"?"var(--emerald)":"var(--indigo)";
-              return (
-                <Fragment key={s.n}>
-                  <Reveal delay={i*110} style={{flex:1}}>
-                    <div className="card accent-top" style={{height:"100%",padding:"30px 26px",borderTopColor:accent}}>
-                      <div className="mono" style={{fontSize:13,color:accent,fontWeight:700,marginBottom:14}}>{s.n}</div>
-                      <IconBadge icon={s.icon} tone={s.tone}/>
-                      <div className="h3" style={{marginBottom:8}}>{s.title}</div>
-                      <p style={{fontSize:14.5,color:"var(--slate-500)",lineHeight:1.7,margin:0}}>{s.desc}</p>
-                    </div>
-                  </Reveal>
-                  {i<steps.length-1&&<div className="step-connector"><Icon.ArrowRight size={18}/></div>}
-                </Fragment>
-              );
-            })}
-          </div>
+
+          <Reveal delay={60}>
+            <div className="showcase-panel">
+              {/* ambient glow blobs */}
+              <div className="glow" style={{ width:340, height:340, top:-100, left:-80, opacity:.5 }}/>
+              <div className="glow" style={{ width:300, height:300, bottom:-100, right:-60, opacity:.4, background:"radial-gradient(circle,rgba(16,185,129,.14),transparent 70%)" }}/>
+
+              <div className="showcase-grid">
+
+                {/* ── LEFT: annotated dashboard diagram — badges 1/2/3 cross-reference the timeline */}
+                <div style={{ position:"relative" }}>
+                  <div className="mono" style={{ fontSize:11, fontWeight:700, color:"var(--indigo)", letterSpacing:".08em", marginBottom:14, textAlign:"center" }}>
+                    LIVE MONITOR PREVIEW
+                  </div>
+                  <DashboardDiagram/>
+
+                  {/* Callout 1 — connect source (indigo) */}
+                  <div style={{ position:"absolute", top:50, left:14, zIndex:5, display:"flex", alignItems:"center", gap:7 }}>
+                    <span className="showcase-badge" style={{ background:"var(--indigo)" }}>1</span>
+                    <span className="showcase-badge-label" style={{ color:"var(--indigo)" }}>Source connected</span>
+                  </div>
+
+                  {/* Callout 2 — anomaly caught by continuous watch (emerald) */}
+                  <div style={{ position:"absolute", top:218, left:"50%", marginLeft:-10, zIndex:5, display:"flex", flexDirection:"column", alignItems:"center", gap:5 }}>
+                    <span className="showcase-badge-label" style={{ color:"var(--emerald-600)" }}>Drift caught</span>
+                    <span className="showcase-badge" style={{ background:"var(--emerald)" }}>2</span>
+                  </div>
+
+                  {/* Callout 3 — alert email (indigo) — sits to the right of the toast card, in clear empty space below the main card */}
+                  <div style={{ position:"absolute", bottom:30, left:212, zIndex:5, display:"flex", alignItems:"center", gap:7 }}>
+                    <span className="showcase-badge" style={{ background:"var(--indigo)" }}>3</span>
+                    <span className="showcase-badge-label" style={{ color:"var(--indigo)" }}>Alert sent</span>
+                  </div>
+                </div>
+
+                {/* ── divider */}
+                <div className="showcase-divider"/>
+
+                {/* ── RIGHT: timeline — numbered dots that match the diagram callouts exactly */}
+                <div style={{ position:"relative" }}>
+                  <div style={{
+                    position:"absolute", left:23, top:24, bottom:24, width:2,
+                    background:"linear-gradient(to bottom,var(--indigo),var(--emerald),var(--indigo))",
+                    borderRadius:999, opacity:.4,
+                  }}/>
+
+                  {steps.map((s,i)=>{
+                    const accent   = s.tone==="emerald"?"var(--emerald)":"var(--indigo)";
+                    const accentBg = s.tone==="emerald"?"var(--emerald-50)":"var(--indigo-50)";
+                    return (
+                      <div key={s.n} style={{
+                        position:"relative", paddingLeft:56,
+                        marginBottom: i<steps.length-1 ? 30 : 0,
+                      }}>
+                        {/* Dot — numbered to match its diagram callout 1:1 */}
+                        <div style={{
+                          position:"absolute", left:14, top:"50%", transform:"translateY(-50%)",
+                          width:20, height:20, borderRadius:"50%",
+                          background:accent, zIndex:2,
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          boxShadow:`0 0 0 5px #fff, 0 0 0 7px ${accent}30`,
+                        }}>
+                          <span style={{ color:"#fff", fontSize:10.5, fontWeight:800 }}>{i+1}</span>
+                        </div>
+
+                        <div>
+                          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:6 }}>
+                            <div style={{ width:26, height:26, borderRadius:7, background:accentBg, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                              <s.icon size={13} style={{ color:accent }}/>
+                            </div>
+                            <div style={{ fontWeight:700, fontSize:15, color:"var(--slate-900)" }}>{s.title}</div>
+                          </div>
+                          <p style={{ fontSize:13.5, color:"var(--slate-500)", lineHeight:1.65, margin:0, paddingLeft:34 }}>{s.desc}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -1119,7 +1341,9 @@ function LandingPage({ onStart }) {
   );
 }
 
+
 // ROOT APP
+
 
 export default function App() {
   const [page,          setPage]          = useState("landing");
@@ -1161,6 +1385,3 @@ export default function App() {
     </>
   );
 }
-
-
-
