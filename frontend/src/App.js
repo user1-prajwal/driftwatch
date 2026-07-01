@@ -8,8 +8,8 @@ import AuthModal from "./AuthModal";
 import { supabase } from "./supabaseClient";
 import axios from "axios";
 
-const SCAN_API = "http://localhost:8000";
-// const SCAN_API = "https://driftwatch-backend.onrender.com";
+// const SCAN_API = "http://localhost:8000";
+const SCAN_API = "https://driftwatch-backend.onrender.com";
 
 
 // GLOBAL STYLES
