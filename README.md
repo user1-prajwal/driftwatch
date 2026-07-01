@@ -1,44 +1,36 @@
-# 🌊 DriftWatch — AI-Powered Data Quality Monitor
+#  DriftWatch
 
-> **Automatically watch your data. Detect anomalies. Understand why — before it becomes a problem.**
+**AI-powered data quality monitoring for teams who care about their data.**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-driftwatch--lovat.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://driftwatch-lovat.vercel.app/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-driftwatchai.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://driftwatchai.vercel.app/)
 [![Backend](https://img.shields.io/badge/Backend-Render-22c55e?style=for-the-badge&logo=render)](https://driftwatch-backend.onrender.com/)
+[![API Docs](https://img.shields.io/badge/API%20Docs-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://driftwatch-backend.onrender.com/docs)
 [![GitHub](https://img.shields.io/badge/GitHub-user1--prajwal-1e293b?style=for-the-badge&logo=github)](https://github.com/user1-prajwal)
 
 ---
 
-## The Problem
+## What is DriftWatch?
 
-Data breaks silently. A payment column fills with nulls. Daily sales crash from ₹46,000 to ₹8,000. API failures spike from 10% to 80%. Nobody notices for hours — until revenue drops or customers complain.
+DriftWatch automatically watches your data sources, detects statistical anomalies using an ensemble of three ML models, and sends a plain-English email explaining what happened and why — before it becomes a business problem.
 
-Existing tools like Datadog or Monte Carlo are expensive enterprise products. Nothing simple, visual, and self-explaining exists for small and mid-size teams.
+**Two ways to use it:**
 
-**DriftWatch fixes this.**
-
----
-
-## What It Does
-
-Connect your Google Sheet once. DriftWatch watches it automatically on your schedule — every hour, every day, whenever you want. When something looks wrong, it sends you a plain-English email explaining **what happened, why, and what to do** — powered by Google Gemini AI.
+- **One-time scan** — upload any CSV directly in the hero section of the landing page. No login required. Results appear inline, instantly.
+- **Auto monitor** — connect a Google Sheet once, set a schedule, and DriftWatch watches it continuously. Email alerts fire only when something actually needs attention.
 
 ---
 
 ## Live Demo
 
-**→ [https://driftwatch-lovat.vercel.app/](https://driftwatch-lovat.vercel.app/)**
+**→ [https://driftwatchai.vercel.app/](https://driftwatchai.vercel.app/)**
 
-> Backend hosted on Render free tier — first request may take ~30 seconds to wake up.
+> Backend runs on Render free tier. First request after inactivity may take ~30 seconds to wake up.
 
-### Try it instantly (no login needed):
-1. Click **"One-time Scan"**
-2. Upload the sample CSV below
-3. Select columns to monitor
-4. Click **"Check for anomalies"**
-5. See AI-powered results instantly
+**Try it instantly — no account needed:**
 
-**Sample CSV to test with:** Save as `test_data.csv`
-```
+The scan tool is embedded directly on the landing page. Upload this sample file to see a live anomaly detection result:
+
+```csv
 date,daily_sales,orders,returns
 2024-01-01,45000,120,5
 2024-01-02,47000,125,4
@@ -53,263 +45,289 @@ date,daily_sales,orders,returns
 2024-01-11,46500,122,5
 2024-01-12,8000,12,45
 ```
-> Last row is the anomaly day — sales crashed, orders crashed, returns spiked.
+
+Save as `test_data.csv`. The last row is the anomaly — sales crashed, orders dropped, returns spiked. DriftWatch will catch all three and explain each one.
 
 ---
 
 ## How It Works
 
 ```
-Your Google Sheet (live data)
+CSV upload or Google Sheet
          ↓
-DriftWatch fetches it automatically on schedule
+clean_numeric() strips commas, currency symbols
+converts "45,000" → 45000 before analysis
          ↓
-3 ML models analyse every selected column
+Three ML detectors run in parallel
          ↓
-Google Gemini AI explains WHY in plain English
+Gemini AI generates plain-English explanation
          ↓
-Simple email alert → "2 issues found → View Dashboard"
+Health score (0–100) computed from combined signals
          ↓
-User clicks → sees full history, graphs, AI explanation
+Email alert fires only if anomaly found
+User sees: what changed · why · what to do
 ```
 
 ---
 
-## Three ML Detectors — Working Together
+## Detection Engine
 
-Most monitoring tools use one detection method. DriftWatch uses three, combined into a single severity score.
+DriftWatch runs three detectors on every scan and combines their outputs into a single health score.
 
-### 1. Z-Score Detector (Numeric Drift)
-Detects when a numeric column's latest value is statistically far from its historical average.
+### Z-Score Detector
+For numeric columns. Measures how many standard deviations the latest value sits from the historical mean. Flags columns that drift outside the expected range.
+
 ```
-daily_sales: normally ~₹46,000
+daily_sales: baseline mean = ₹46,125 ± ₹1,240
 Today's value: ₹8,000
-Z-score: -12.8 → CRITICAL (>3σ from mean)
+Z-score: −30.7 → CRITICAL
+Change: 📉 82.7% below usual
 ```
 
-### 2. Chi-Square Detector (Categorical Drift)
-Detects when the distribution of a category column changes significantly.
+### Chi-Square Detector
+For categorical columns. Compares today's value distribution against the historical baseline using a chi-square test. Catches sudden shifts in category mix.
+
 ```
-API status — normal: success 80%, failed 10%
-Today:              success 10%, failed 80%
-P-value: 0.0004 → CRITICAL (statistically significant shift)
+API status — baseline: success 80%, failed 10%, pending 10%
+Today:                 success 10%, failed 80%, pending 10%
+P-value: 0.0004 → CRITICAL distribution shift
 ```
 
-### 3. Isolation Forest (Row-Level Anomaly)
-Detects rows that look suspicious across **multiple columns simultaneously** — anomalies that Z-score alone would miss.
+### Isolation Forest
+For row-level anomalies across multiple columns simultaneously. A row can look normal in each individual column but still be statistically impossible when all columns are considered together.
+
 ```
-teachers_present: 16 (looks normal individually)
-classes_held: 1, students_present: 12
-→ Row-level anomaly detected across all columns together
+teachers_present: 16   (normal range: 15–18)
+classes_held:      1   (normal range: 7–9)
+students_present: 12   (normal range: 420–470)
+
+Each column looks borderline alone.
+Together: row-level anomaly → CRITICAL
 ```
 
-### Combined Severity Score
-All three scores are combined into a single **0–100 severity metric** per column. Users never see Z-scores or p-values — just plain English.
+### Health Score
+All three detector signals are combined into a single 0–100 health score per scan:
+
+```
+80–100  Healthy
+60–79   Fair
+40–59   Degraded
+0–39    Critical Drift
+```
 
 ---
 
 ## System Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     FRONTEND (React)                    │
-│  Landing Page → One-time Scan → Auto Monitors Dashboard │
-│         Vercel · supabase-js · axios                    │
-└──────────────────────┬──────────────────────────────────┘
-                       │ REST API (JWT Auth)
-┌──────────────────────▼──────────────────────────────────┐
-│                   BACKEND (FastAPI)                     │
-│                                                         │
-│  ┌─────────────┐  ┌──────────────┐  ┌───────────────┐   │
-│  │  /scan      │  │  /monitors   │  │  /history     │   │
-│  │  (public)   │  │  (auth req)  │  │  (auth req)   │   │
-│  └──────┬──────┘  └──────┬───────┘  └───────┬───────┘   │
-│         │                │                   │          │
-│  ┌──────▼────────────────▼───────────────────▼───────┐  │
-│  │              ML Engine (detector.py)              │  │
-│  │   Z-Score · Chi-Square · Isolation Forest         │  │
-│  │   + clean_numeric() for text-number handling      │  │
-│  └──────────────────────┬────────────────────────────┘  │
-│                         │                               │
-│  ┌──────────────────────▼────────────────────────────┐  │
-│  │           Google Gemini AI (explanation)          │  │
-│  │   Structured prompt → plain English response      │  │
-│  └──────────────────────┬────────────────────────────┘  │
-│                         │                               │
-│  ┌──────────────────────▼────────────────────────────┐  │
-│  │              APScheduler (background)             │  │
-│  │   Per-user intervals · Google Sheets fetch        │  │
-│  │   Auto email alert · Save to scan_history         │  │
-│  └───────────────────────────────────────────────────┘  │
-│                    Render (Python)                      │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────┐
-│                    SUPABASE                             │
-│                                                         │
-│  PostgreSQL Database                                    │
-│  ├── monitors table (user_id FK, RLS enabled)           │
-│  └── scan_history table (monitor_id FK, RLS enabled)    │
-│                                                         │
-│  Auth (email + Google OAuth)                            │
-│  Row Level Security → DB-level data isolation           │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                     FRONTEND (React)                     │
+│                                                          │
+│  Landing page with embedded scan tool (no login)         │
+│  Auto monitors dashboard (login required)                │
+│  Run history · metric trend chart · status donut         │
+│  Scan history table with expandable row details          │
+│                                                          │
+│  Vercel · supabase-js · axios · Recharts                 │
+└───────────────────────┬──────────────────────────────────┘
+                        │ REST API
+                        │ JWT token on protected routes
+┌───────────────────────▼──────────────────────────────────┐
+│                   BACKEND (FastAPI)                      │
+│                                                          │
+│  Public routes     │  Protected routes (JWT required)    │
+│  ─────────────     │  ──────────────────────────────     │
+│  POST /scan        │  POST   /monitors                   │
+│  POST /columns     │  GET    /monitors                   │
+│  GET  /health      │  POST   /monitors/{id}/run          │
+│                    │  POST   /monitors/{id}/pause         │
+│                    │  POST   /monitors/{id}/resume        │
+│                    │  DELETE /monitors/{id}               │
+│                    │  GET    /monitors/{id}/history       │
+│                                                          │
+├──────────────────────────────────────────────────────────┤
+│                    ML ENGINE                             │
+│                                                          │
+│  detector.py                                             │
+│  ├── clean_numeric()       text-number preprocessing     │
+│  ├── check_numeric_column()      Z-score detector        │
+│  ├── check_category_column()  Chi-square detector        │
+│  ├── check_isolation_forest()    IF detector             │
+│  └── explain_with_gemini()   Gemini AI explanation       │
+│                                                          │
+├──────────────────────────────────────────────────────────┤
+│                   SCHEDULER                              │
+│                                                          │
+│  APScheduler (BackgroundScheduler)                       │
+│  ├── Loads all active monitors on startup                │
+│  ├── Fetches Google Sheet via CSV export URL             │
+│  ├── Runs full detector pipeline                         │
+│  ├── Sends email via Brevo API if anomaly found          │
+│  └── Saves result to scan_history table                  │
+│                                                          │
+│  Render (Python)                                         │
+└───────────────────────┬──────────────────────────────────┘
+                        │
+┌───────────────────────▼──────────────────────────────────┐
+│                    SUPABASE                              │
+│                                                          │
+│  PostgreSQL                                              │
+│  ├── monitors      (user_id FK · RLS enabled)            │
+│  └── scan_history  (monitor_id FK · RLS enabled)         │
+│                                                          │
+│  Auth                                                    │
+│  ├── Email + password                                    │
+│  └── Google OAuth2                                       │
+│                                                          │
+│  Row Level Security                                      │
+│  └── Data isolation enforced at database level           │
+│      auth.uid() = user_id on every query                 │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🔐 Security Architecture
+## Security
 
-**Multi-user data isolation** enforced at two levels:
+Data isolation is enforced at two independent levels.
 
-1. **Application level** — JWT token verified on every protected route. `user_id` extracted from token, never from request body.
+**Application level** — every protected route verifies the JWT token. The `user_id` is always extracted from the verified token, never from the request body. A user cannot reference another user's monitor ID.
 
-2. **Database level (Row Level Security)** — PostgreSQL RLS policy:
-   ```sql
-   create policy "Users see own monitors"
-     on monitors for all
-     using (auth.uid() = user_id);
-   ```
-   Even if there's a bug in the API code, the database physically cannot return another user's data.
+**Database level** — Supabase Row Level Security policies mean the database itself enforces isolation:
+
+```sql
+create policy "Users see own monitors"
+  on monitors for all
+  using (auth.uid() = user_id);
+
+create policy "Users see own history"
+  on scan_history for all
+  using (auth.uid() = user_id);
+```
+
+Even if there were a bug in the application code, the database would not return another user's data.
+
+**Stateless scans** — one-time scans run entirely in memory. No data is written to the database. The uploaded file is deleted from the server immediately after the scan completes.
 
 ---
 
 ## Key Design Decisions
 
-| Decision | Why |
-|----------|-----|
-| Stateless one-time scans | No DB writes → scales infinitely, no login friction |
-| Auth only for auto monitors | Users can try the product instantly without signup |
-| Google Sheets only for monitors | Local CSV paths don't exist on deployed servers |
-| Plain English results | Z-scores and p-values mean nothing to non-technical users |
-| No email on NORMAL status | Silence = good news. Only alert when action is needed |
-| Sensitivity levels (Low/Medium/High) | Different data has different tolerance levels |
-| `clean_numeric()` preprocessing | Google Sheets stores "45,000" as text — this fixes it |
+| Decision | Reasoning |
+|----------|-----------|
+| Scan tool embedded in hero section | Zero friction — users see value before they sign up, with no navigation required |
+| Auth required only for auto monitors | One-time scans are stateless and need no account; monitoring requires persistence |
+| Google Sheets only for auto monitors | Local CSV paths are inaccessible from a deployed server; Sheets work from anywhere |
+| `clean_numeric()` preprocessing | Google Sheets stores formatted numbers like "45,000" as text strings; this converts them before ML runs |
+| Plain English output | Statistical terms like Z-score and p-value are abstracted away completely from the user-facing output |
+| Email only on anomaly | Silent normal scans reduce noise; alerts mean something needs attention |
+| Sensitivity levels | Different datasets have different tolerance thresholds; users choose Low, Medium, or High in plain language |
+| Scan history in PostgreSQL | Enables the run history graph, trend charts, and filterable history table in the monitor dashboard |
 
 ---
 
-## ⚙️ Tech Stack
+## Known Limitations and Production Considerations
+
+**APScheduler on Render free tier** — the scheduler runs inside the FastAPI process. On a multi-instance deployment, each instance would run the same job independently. For production scale, this would migrate to a distributed task queue (Celery + Redis) or a managed cron service.
+
+**Render free tier sleep** — the server sleeps after 15 minutes of inactivity. A health check ping service (UptimeRobot) keeps it awake for demo purposes. A paid instance would eliminate this entirely.
+
+**Gemini on the critical path** — currently the AI explanation blocks the scan response. A more resilient architecture would detect and save the anomaly first, send the alert, then generate the explanation asynchronously. Gemini downtime would not affect detection.
+
+---
+
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React, Axios |
+| Frontend | React, Recharts, Axios |
 | Backend | Python, FastAPI, Uvicorn |
-| ML | scikit-learn (Isolation Forest), scipy (chi-square, Z-score), pandas |
-| AI | Google Gemini 1.5 Flash API |
-| Auth | Supabase Auth (email + Google OAuth2) |
+| ML | scikit-learn (Isolation Forest), scipy (Z-score, chi-square), pandas |
+| AI | Google Gemini 1.5 Flash |
+| Auth | Supabase Auth — email/password + Google OAuth2 |
 | Database | Supabase PostgreSQL + Row Level Security |
-| Scheduler | APScheduler (BackgroundScheduler) |
-| Email | Gmail SMTP (smtplib) |
-| Data Source | Google Sheets (CSV export URL) |
-| Deploy | Vercel (frontend) + Render (backend) |
-
----
-
-## API Routes
-
-| Method | Route | Auth | Description |
-|--------|-------|------|-------------|
-| GET | `/health` | ❌ | Server health check |
-| POST | `/scan` | ❌ | One-time stateless scan |
-| POST | `/columns` | ❌ | Get CSV column names |
-| POST | `/monitors` | ✅ | Create auto monitor |
-| GET | `/monitors` | ✅ | List user's monitors |
-| POST | `/monitors/{id}/run` | ✅ | Trigger manual scan |
-| POST | `/monitors/{id}/pause` | ✅ | Pause a monitor |
-| POST | `/monitors/{id}/resume` | ✅ | Resume a monitor |
-| DELETE | `/monitors/{id}` | ✅ | Delete a monitor |
-| GET | `/monitors/{id}/history` | ✅ | Get scan history |
+| Scheduler | APScheduler BackgroundScheduler |
+| Email | Brevo Transactional Email API |
+| Data source | Google Sheets CSV export |
+| Deploy | Vercel (frontend) · Render (backend) |
 
 ---
 
 ## Run Locally
 
-### Prerequisites
-- Python 3.10+
-- Node.js 18+
-- Supabase account (free)
-- Google Gemini API key (free)
-- Gmail account with App Password
+**Prerequisites:** Python 3.10+, Node.js 18+, Supabase account, Gemini API key (free), Brevo API key (free)
 
-### Backend Setup
+### Backend
 
 ```bash
-# Clone repo
 git clone https://github.com/user1-prajwal/driftwatch.git
 cd driftwatch/backend
 
-# Install dependencies
 pip install -r requirements.txt
 
-# Create .env file
+# Copy and fill in environment variables
 cp .env.example .env
-# Fill in your keys (see Environment Variables below)
 
-# Run backend
 python -m uvicorn main:app --reload
-# API running at http://localhost:8000
-# Docs at http://localhost:8000/docs
+# http://localhost:8000
+# http://localhost:8000/docs  ← interactive API docs
 ```
 
-### Frontend Setup
+### Frontend
 
 ```bash
 cd driftwatch/frontend
-
-# Install dependencies
 npm install
 
-# Create .env file
-echo "REACT_APP_SUPABASE_URL=your_url" > .env
-echo "REACT_APP_SUPABASE_ANON_KEY=your_key" >> .env
+# Create frontend .env
+echo "REACT_APP_SUPABASE_URL=your_supabase_url" > .env
+echo "REACT_APP_SUPABASE_ANON_KEY=your_anon_key" >> .env
 
-# Run frontend
 npm start
-# App running at http://localhost:3000
+# http://localhost:3000
 ```
 
 ### Environment Variables
 
-**Backend `.env`:**
+**`backend/.env`**
 ```
-GEMINI_API_KEY=your_gemini_api_key
-EMAIL_SENDER=your_gmail@gmail.com
-EMAIL_PASSWORD=your_16_char_app_password
-SUPABASE_URL=https://xxxxx.supabase.co
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_KEY=your_service_role_key
-```
-
-**Frontend `.env`:**
-```
-REACT_APP_SUPABASE_URL=https://xxxxx.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your_anon_key
+GEMINI_API_KEY=
+BREVO_API_KEY=
+BREVO_SENDER_EMAIL=
+BREVO_SENDER_NAME=DriftWatch
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_KEY=
 ```
 
-### Database Setup (Supabase)
+**`frontend/.env`**
+```
+REACT_APP_SUPABASE_URL=
+REACT_APP_SUPABASE_ANON_KEY=
+```
 
-Run this SQL in your Supabase SQL Editor:
+### Database (Supabase SQL Editor)
 
 ```sql
 -- Monitors table
 create table monitors (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id) on delete cascade,
-  name text not null,
-  source_type text not null,
-  source_value text not null,
-  date_column text not null,
-  context text not null,
-  sensitivity text default 'medium',
-  alert_email text not null,
-  interval_hours integer not null,
+  id              uuid default gen_random_uuid() primary key,
+  user_id         uuid references auth.users(id) on delete cascade,
+  name            text not null,
+  source_type     text not null,
+  source_value    text not null,
+  date_column     text not null,
+  context         text not null,
+  sensitivity     text default 'medium',
+  alert_email     text not null,
+  interval_hours  integer not null,
   monitor_columns text default '',
-  status text default 'active',
-  created_at timestamptz default now(),
-  last_run timestamptz,
-  last_status text,
-  total_runs integer default 0,
-  total_alerts integer default 0
+  status          text default 'active',
+  created_at      timestamptz default now(),
+  last_run        timestamptz,
+  last_status     text,
+  total_runs      integer default 0,
+  total_alerts    integer default 0
 );
 
 alter table monitors enable row level security;
@@ -318,17 +336,17 @@ create policy "Users see own monitors"
 
 -- Scan history table
 create table scan_history (
-  id uuid default gen_random_uuid() primary key,
-  monitor_id uuid references monitors(id) on delete cascade,
-  user_id uuid references auth.users(id) on delete cascade,
-  scanned_at timestamptz default now(),
-  overall_status text not null,
-  total_columns integer default 0,
-  critical_count integer default 0,
-  warning_count integer default 0,
-  normal_count integer default 0,
-  column_results jsonb,
-  alert_sent boolean default false
+  id              uuid default gen_random_uuid() primary key,
+  monitor_id      uuid references monitors(id) on delete cascade,
+  user_id         uuid references auth.users(id) on delete cascade,
+  scanned_at      timestamptz default now(),
+  overall_status  text not null,
+  total_columns   integer default 0,
+  critical_count  integer default 0,
+  warning_count   integer default 0,
+  normal_count    integer default 0,
+  column_results  jsonb,
+  alert_sent      boolean default false
 );
 
 alter table scan_history enable row level security;
@@ -341,40 +359,33 @@ create index scan_history_scanned_at_idx on scan_history(scanned_at desc);
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 driftwatch/
 ├── backend/
-│   ├── main.py              # FastAPI app + all routes
-│   ├── detector.py          # ML engine (Z-score, Chi-square, IF)
-│   ├── scheduler.py         # APScheduler + Google Sheets fetcher
-│   ├── monitors.py          # Supabase monitor CRUD
-│   ├── alerts.py            # Gmail SMTP email alerts
-│   ├── auth.py              # JWT verification middleware
-│   ├── supabase_client.py   # Supabase client setup
+│   ├── main.py              FastAPI app, all API routes
+│   ├── detector.py          ML engine — Z-score, chi-square, Isolation Forest
+│   ├── scheduler.py         APScheduler, Google Sheets fetcher, scan runner
+│   ├── monitors.py          Supabase CRUD for monitors table
+│   ├── alerts.py            Brevo email alert sender
+│   ├── auth.py              JWT verification middleware
+│   ├── supabase_client.py   Supabase anon + service role clients
 │   ├── requirements.txt
-│   └── data/                # Temp files (auto-cleaned)
+│   └── data/                Temporary scan files (auto-deleted)
 │
 └── frontend/
-    ├── src/
-    │   ├── App.js            # Landing page + routing
-    │   ├── ScanPage.js       # One-time scan flow
-    │   ├── MonitorsPage.js   # Auto monitors dashboard
-    │   ├── AuthModal.js      # Login/signup popup
-    │   └── supabaseClient.js # Supabase JS client
-    └── package.json
+    └── src/
+        ├── App.js            Landing page, embedded scan tool, routing
+        ├── MonitorsPage.js   Full monitor dashboard with charts
+        ├── ScanPage.js       Standalone one-time scan flow
+        ├── AuthModal.js      Login / signup modal
+        └── supabaseClient.js Supabase JS client initialisation
 ```
 
 ---
 
-##  Author
+## Author
 
-**Prajwal** — 3rd year CSE student at East West Institute of Technology, Bengaluru
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-prajwal--poojari451-0077b5?style=flat&logo=linkedin)](https://linkedin.com/in/user1-prajwal451)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077b5?style=flat&logo=linkedin)](https://linkedin.com/in/user1-prajwal451)
 [![GitHub](https://img.shields.io/badge/GitHub-user1--prajwal-1e293b?style=flat&logo=github)](https://github.com/user1-prajwal)
-
----
-
-*Built with the goal of making data quality monitoring accessible to everyone — not just enterprises with Datadog budgets.*
