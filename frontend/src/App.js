@@ -1,6 +1,3 @@
-
-
-
 import { useState, useRef, useEffect, Fragment } from "react";
 import MonitorsPage from "./MonitorsPage";
 import ScanPage from "./ScanPage";
@@ -95,7 +92,7 @@ const GLOBAL_CSS = `
 .btn:focus-visible,.nav-link:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--indigo);outline-offset:3px;}
 
 /* grids */
-.hero-pad{padding-top:clamp(120px,18vw,160px);padding-bottom:clamp(48px,8vw,90px);}
+.hero-pad{padding-top:clamp(120px,18vw,125px);padding-bottom:clamp(48px,8vw,90px);}
 .hero-grid{display:grid;grid-template-columns:1fr;gap:64px;align-items:center;}
 @media(min-width:980px){.hero-grid{grid-template-columns:1.08fr .92fr;gap:40px;}}
 .grid-3{display:grid;grid-template-columns:1fr;gap:20px;}
@@ -1141,7 +1138,8 @@ function LandingPage({ onStart }) {
       {/* ── PROBLEM */}
       <section className="section bg-alt">
         <div className="container">
-          <Reveal><SectionHead title="Your data already broke. You just don't know it yet." desc="Spreadsheets and CSVs are the backbone of daily decisions — and the easiest place for something to quietly go wrong."/></Reveal>
+         
+          <Reveal><SectionHead title="The Cost of Unmonitored Data"/></Reveal>
           <div className="grid-3">{problems.map((p,i)=><FeatureCard key={p.title} icon={p.icon} tone="slate" title={p.title} desc={p.desc} delay={i*90}/>)}</div>
         </div>
       </section>
@@ -1149,7 +1147,7 @@ function LandingPage({ onStart }) {
       {/* ── HOW IT WORKS — one unified showcase panel: annotated diagram + timeline */}
       <section className="section" ref={howRef} style={{ scrollMarginTop:84 }}>
         <div className="container">
-          <Reveal><SectionHead title="Set up once. DriftWatch does the rest." desc="Three steps between you and never finding out about a data problem the hard way."/></Reveal>
+          <Reveal><SectionHead title="How DriftWatch Works"/></Reveal>
 
           <Reveal delay={60}>
             <div className="showcase-panel">
@@ -1237,7 +1235,14 @@ function LandingPage({ onStart }) {
       {/* ── FEATURES */}
       <section className="section bg-alt" ref={featuresRef} style={{ scrollMarginTop:84 }}>
         <div className="container">
-          <Reveal><SectionHead title="Everything you need, nothing you have to babysit" desc="DriftWatch is built to run quietly in the background and only ask for your attention when it matters."/></Reveal>
+
+   
+          <Reveal>
+          <SectionHead
+            title="Everything you need"
+            className="text-2xl font-bold text-white"
+          />
+        </Reveal>
           <div className="grid-3">{features.map((f,i)=><FeatureCard key={f.title} icon={f.icon} tone={f.tone} title={f.title} desc={f.desc} delay={(i%3)*90}/>)}</div>
         </div>
       </section>
@@ -1245,7 +1250,7 @@ function LandingPage({ onStart }) {
       {/* ── DETECTION */}
       <section className="section" ref={detectionRef} style={{ scrollMarginTop:84 }}>
         <div className="container">
-          <Reveal><SectionHead title="Three ways of looking at the same data" desc="Most tools watch for one type of problem. DriftWatch checks every dataset from three angles, then combines them into one clear verdict."/></Reveal>
+          <Reveal><SectionHead title="How DriftWatch Detects Issues"/></Reveal>
           <div className="grid-3">
             {detectors.map((d,i)=>(
               <Reveal key={d.title} delay={i*100} style={{height:"100%"}}>
@@ -1264,7 +1269,12 @@ function LandingPage({ onStart }) {
       {/* ── SECURITY */}
       <section className="section bg-alt" ref={securityRef} style={{ scrollMarginTop:84 }}>
         <div className="container">
-          <Reveal><SectionHead title="Your data is yours. Always." desc="Every account is fully isolated — enforced independently at the app layer and the database layer."/></Reveal>
+           <Reveal>
+          <SectionHead
+            title="Your Data. Protected."
+            className="text-2xl font-bold text-white"
+          />
+         </Reveal>
           <div className="grid-4">
             {securityItems.map((s,i)=>(
               <Reveal key={s.title} delay={i*80} style={{height:"100%"}}>
