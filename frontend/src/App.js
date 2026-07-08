@@ -454,28 +454,28 @@ function SectionHead({ title, desc, light }) {
   );
 }
 
-function FeatureCard({ icon, tone, title, desc, delay = 0 }) {
-  return (
-    <Reveal delay={delay} style={{ height: "100%" }}>
-      <div className="card feature-card" style={{ height: "100%" }}>
-        <IconBadge icon={icon} tone={tone} />
-        <div className="h3" style={{ marginBottom: 8 }}>
-          {title}
-        </div>
-        <p
-          style={{
-            fontSize: 14.5,
-            color: "var(--slate-500)",
-            lineHeight: 1.7,
-            margin: 0,
-          }}
-        >
-          {desc}
-        </p>
-      </div>
-    </Reveal>
-  );
-}
+// function FeatureCard({ icon, tone, title, desc, delay = 0 }) {
+//   return (
+//     <Reveal delay={delay} style={{ height: "100%" }}>
+//       <div className="card feature-card" style={{ height: "100%" }}>
+//         <IconBadge icon={icon} tone={tone} />
+//         <div className="h3" style={{ marginBottom: 8 }}>
+//           {title}
+//         </div>
+//         <p
+//           style={{
+//             fontSize: 14.5,
+//             color: "var(--slate-500)",
+//             lineHeight: 1.7,
+//             margin: 0,
+//           }}
+//         >
+//           {desc}
+//         </p>
+//       </div>
+//     </Reveal>
+//   );
+// }
 
 // ─── NAV ─
 
@@ -2387,44 +2387,44 @@ function LandingPage({ onStart }) {
     },
   ];
 
-  const features = [
-    {
-      icon: Icon.Activity,
-      tone: "indigo",
-      title: "Automated monitoring",
-      desc: "Schedule checks from hourly to weekly. DriftWatch runs in the background so you don't have to remember to look.",
-    },
-    {
-      icon: Icon.fileSheet,
-      tone: "emerald",
-      title: "One-time scans",
-      desc: "Upload a CSV and get a full anomaly report in seconds. No login, nothing stored.",
-    },
-    {
-      icon: Icon.barChart,
-      tone: "indigo",
-      title: "Run history",
-      desc: "Every check is logged on a timeline, so you can spot a pattern, not just a single incident.",
-    },
-    {
-      icon: Icon.Cpu,
-      tone: "amber",
-      title: "AI-generated explanations",
-      desc: "Every alert comes with a clear explanation of what changed and why it likely happened.",
-    },
-    {
-      icon: Icon.Mail,
-      tone: "emerald",
-      title: "Smart email alerts",
-      desc: "You're only emailed when something needs attention. Normal days stay quiet.",
-    },
-    {
-      icon: Icon.sliders,
-      tone: "slate",
-      title: "Full control, anytime",
-      desc: "Pause, resume, or delete any monitor in a click. Nothing runs without your say.",
-    },
-  ];
+  // const features = [
+  //   {
+  //     icon: Icon.Activity,
+  //     tone: "indigo",
+  //     title: "Automated monitoring",
+  //     desc: "Schedule checks from hourly to weekly. DriftWatch runs in the background so you don't have to remember to look.",
+  //   },
+  //   {
+  //     icon: Icon.fileSheet,
+  //     tone: "emerald",
+  //     title: "One-time scans",
+  //     desc: "Upload a CSV and get a full anomaly report in seconds. No login, nothing stored.",
+  //   },
+  //   {
+  //     icon: Icon.barChart,
+  //     tone: "indigo",
+  //     title: "Run history",
+  //     desc: "Every check is logged on a timeline, so you can spot a pattern, not just a single incident.",
+  //   },
+  //   {
+  //     icon: Icon.Cpu,
+  //     tone: "amber",
+  //     title: "AI-generated explanations",
+  //     desc: "Every alert comes with a clear explanation of what changed and why it likely happened.",
+  //   },
+  //   {
+  //     icon: Icon.Mail,
+  //     tone: "emerald",
+  //     title: "Smart email alerts",
+  //     desc: "You're only emailed when something needs attention. Normal days stay quiet.",
+  //   },
+  //   {
+  //     icon: Icon.sliders,
+  //     tone: "slate",
+  //     title: "Full control, anytime",
+  //     desc: "Pause, resume, or delete any monitor in a click. Nothing runs without your say.",
+  //   },
+  // ];
 
   const detectors = [
     {
