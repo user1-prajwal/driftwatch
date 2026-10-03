@@ -1,4 +1,4 @@
-#  DriftWatch
+<!--#  DriftWatch
 
 **AI-powered data quality monitoring for teams who care about their data.**
 
@@ -389,3 +389,269 @@ driftwatch/
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0077b5?style=flat&logo=linkedin)](https://linkedin.com/in/user1-prajwal451)
 [![GitHub](https://img.shields.io/badge/GitHub-user1--prajwal-1e293b?style=flat&logo=github)](https://github.com/user1-prajwal)
+-->
+# DriftWatch — Data Anomaly Monitoring Platform
+
+Detect unusual changes in tabular data and get a plain-English explanation of what changed. Upload a CSV for a one-off scan, or connect a Google Sheet and let DriftWatch check it on a schedule and email you when something looks wrong.
+
+[Live demo](https://driftwatchai.vercel.app/) · [Backend API docs](https://driftwatch-backend.onrender.com/docs) · [Interactive architecture map](docs/architecture-map.html)
+
+> The backend runs on Render's free tier, so the first request after a period of inactivity can take about 30 seconds.
+
+## What it does
+
+- **One-time scan (no login).** Upload a CSV on the landing page and get results inline. Nothing is saved, and the uploaded file is deleted when the scan finishes.
+- **Auto monitors (login required).** Connect a Google Sheet, choose columns, sensitivity and an interval in hours. Each run is stored in scan history. An email alert is sent only when the overall result is not NORMAL.
+- **Plain-English explanations.** Findings with severity above 30 are explained by Gemini (what changed, why it may matter, what to do). Statistical terms stay out of the headline results.
+
+## How a scan works
+
+DriftWatch judges the **latest row (or latest date) against the history before it.** Your data must therefore be ordered oldest to newest; the code does not sort it.
+
+1. **Upload and validation.** CSV only, 50 MB cap, rate-limited. The file is stored under a server-generated name.
+2. **Cleaning.** `clean_numeric()` converts text numbers such as `"45,000"` or currency-formatted values to real numbers.
+3. **Detection.** For each monitored column, in sequence:
+   - **Numeric columns, z-score.** The latest value is compared with the mean and standard deviation of earlier rows. Needs at least 2 history values and a non-zero standard deviation.
+   - **Categorical columns, chi-square.** The category mix on the latest date is compared with the combined mix of earlier dates (`scipy.stats.chi2_contingency`).
+   - **Row-level, Isolation Forest.** Runs once across all numeric columns when there are at least 2 numeric columns and 10 history rows (100 trees, fixed seed, training sample capped at 50,000 rows). It reports the three columns that deviate most.
+4. **Explanation.** Results with severity above 30 are sent to `gemini-2.5-flash`. If the call fails, the error is logged and the result is returned without an explanation.
+5. **Response.** Each column is labelled NORMAL, WARNING or CRITICAL, plus an overall status for the scan.
+
+### Sensitivity
+
+| Level | Z-score warning / critical | Chi-square p-value warning / critical | Isolation Forest contamination |
+|---|---|---|---|
+| Low | 3.0 / 5.0 | 0.01 / 0.001 | 0.05 |
+| Medium | 2.0 / 3.0 | 0.05 / 0.01 | 0.10 |
+| High | 1.0 / 2.0 | 0.10 / 0.05 | 0.15 |
+
+### Health score
+
+The health score is calculated **in the frontend** from the backend's statuses; it is not a backend field.
+
+- **One-time scan:** `100 − 25 per CRITICAL − 12 per WARNING − 20 per ERROR`, floored at 0. Labels: 80–100 Healthy, 60–79 Fair, 40–59 Degraded, below 40 Critical drift.
+- **Monitor dashboard:** the average of recent runs, where NORMAL counts 1, WARNING 0.5 and CRITICAL 0.
+
+### Try it
+
+Save as `test_data.csv` and upload it. The last row is the anomaly: sales and orders crash while returns spike.
+
+```csv
+date,daily_sales,orders,returns
+2024-01-01,45000,120,5
+2024-01-02,47000,125,4
+2024-01-03,44000,118,6
+2024-01-04,46000,122,5
+2024-01-05,48000,128,4
+2024-01-06,45500,121,5
+2024-01-07,47500,126,4
+2024-01-08,46000,123,5
+2024-01-09,45000,119,6
+2024-01-10,47000,124,4
+2024-01-11,46500,122,5
+2024-01-12,8000,12,45
+```
+
+## Architecture
+
+Every box and arrow below comes from the code. For an animated version with node tracing, a guided walkthrough and export options, open [`docs/architecture-map.html`](docs/architecture-map.html) in a browser.
+
+```mermaid
+flowchart LR
+    User([User]) --> FE["React frontend<br/>axios · recharts · supabase-js"]
+    FE -->|"POST /columns, /scan<br/>(public, rate-limited)"| API["FastAPI backend<br/>main.py"]
+    FE -->|"Bearer JWT<br/>/monitors*"| API
+    FE -->|"sign in / sign up / Google OAuth"| SB[("Supabase<br/>Auth + Postgres")]
+
+    API --> CSV["CSV processing<br/>save_upload · pandas · clean_numeric"]
+    CSV --> DET["Drift detection<br/>z-score · chi-square · Isolation Forest"]
+    DET -.->|"severity > 30"| GEM["Gemini<br/>gemini-2.5-flash"]
+    DET --> RES["Results JSON<br/>NORMAL / WARNING / CRITICAL"]
+    RES --> FE
+
+    API -->|"verify JWT"| SB
+    API -->|"monitor CRUD"| SB
+    API -->|"start on app startup"| SCH["APScheduler<br/>run_monitor per interval"]
+    SHEET["Google Sheet<br/>CSV export URL"] --> SCH
+    SCH --> DET
+    SCH -->|"scan_history, run stats"| SB
+    SCH -->|"overall != NORMAL"| BREVO["Brevo<br/>transactional email"]
+
+    VERCEL{{Vercel}} -.hosts.-> FE
+    RENDER{{Render}} -.hosts.-> API
+```
+
+### Backend routes
+
+| Route | Auth | Purpose |
+|---|---|---|
+| `GET /health` | none | Health check |
+| `POST /scan` | none, 10/min per IP | One-off scan, stateless |
+| `POST /columns` | none, 30/min per IP | List columns of an uploaded CSV |
+| `POST /monitors` | JWT | Create a monitor and schedule it |
+| `GET /monitors`, `GET /monitors/{id}` | JWT | List or read your monitors |
+| `POST /monitors/{id}/run` | JWT | Run a monitor now |
+| `POST /monitors/{id}/pause`, `/resume` | JWT | Pause or resume scheduling |
+| `DELETE /monitors/{id}` | JWT | Delete a monitor |
+| `GET /monitors/{id}/history` | JWT | Recent scan history (`?limit=`) |
+
+Rate limits and the upload cap are configurable through `RATE_LIMIT_SCAN`, `RATE_LIMIT_COLUMNS` and `MAX_UPLOAD_MB`.
+
+## Security
+
+- **Authentication.** Protected routes validate the Supabase JWT. The `user_id` always comes from the verified token, never from the request body.
+- **Authorization.** Monitor and history endpoints look the monitor up by `(monitor_id, user_id)` before returning or changing anything. The backend talks to Supabase with the **service-role key**, which bypasses Row Level Security, so isolation on this path is enforced by those application-level filters.
+- **Row Level Security.** The SQL below also enables RLS policies (`auth.uid() = user_id`). They protect any direct access made with the anon key, such as from the browser.
+- **Public endpoint hardening.** CSV-only, size-capped streaming upload, per-IP rate limiting, server-generated temp filenames (the client filename is never used in a path), temp file deleted after each scan.
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19 (Create React App), axios, Recharts, lucide-react, supabase-js |
+| Backend | Python, FastAPI, Uvicorn, slowapi (rate limiting) |
+| Detection | pandas, scipy (chi-square), scikit-learn (Isolation Forest) |
+| AI explanations | Google Gemini (`gemini-2.5-flash`) via `google-genai` |
+| Auth and database | Supabase Auth (email/password, Google OAuth) and Postgres |
+| Scheduling | APScheduler `BackgroundScheduler` inside the API process |
+| Email | Brevo transactional email API |
+| Data source for monitors | Google Sheets CSV export |
+| Hosting | Vercel (frontend), Render (backend) |
+| CI | GitHub Actions running pytest |
+
+## Run locally
+
+Prerequisites: Python 3.11, Node.js 18+, a Supabase project, a Gemini API key, a Brevo API key.
+
+### Database
+
+Run this in the Supabase SQL editor.
+
+```sql
+create table monitors (
+  id              uuid default gen_random_uuid() primary key,
+  user_id         uuid references auth.users(id) on delete cascade,
+  name            text not null,
+  source_type     text not null,
+  source_value    text not null,
+  date_column     text not null,
+  context         text not null,
+  sensitivity     text default 'medium',
+  alert_email     text not null,
+  interval_hours  integer not null,
+  monitor_columns text default '',
+  status          text default 'active',
+  created_at      timestamptz default now(),
+  last_run        timestamptz,
+  last_status     text,
+  total_runs      integer default 0,
+  total_alerts    integer default 0
+);
+alter table monitors enable row level security;
+create policy "Users see own monitors" on monitors for all using (auth.uid() = user_id);
+
+create table scan_history (
+  id              uuid default gen_random_uuid() primary key,
+  monitor_id      uuid references monitors(id) on delete cascade,
+  user_id         uuid references auth.users(id) on delete cascade,
+  scanned_at      timestamptz default now(),
+  overall_status  text not null,
+  total_columns   integer default 0,
+  critical_count  integer default 0,
+  warning_count   integer default 0,
+  normal_count    integer default 0,
+  column_results  jsonb,
+  alert_sent      boolean default false
+);
+alter table scan_history enable row level security;
+create policy "Users see own history" on scan_history for all using (auth.uid() = user_id);
+create index scan_history_monitor_id_idx on scan_history(monitor_id);
+create index scan_history_scanned_at_idx on scan_history(scanned_at desc);
+```
+
+### Backend
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+Create `backend/.env`:
+
+```env
+GEMINI_API_KEY=
+BREVO_API_KEY=
+BREVO_SENDER_EMAIL=
+BREVO_SENDER_NAME=DriftWatch
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_KEY=
+# optional
+MAX_UPLOAD_MB=50
+RATE_LIMIT_SCAN=10/minute
+RATE_LIMIT_COLUMNS=30/minute
+```
+
+```bash
+python -m uvicorn main:app --reload   # http://localhost:8000  (docs at /docs)
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+```
+
+Create `frontend/.env`:
+
+```env
+REACT_APP_SUPABASE_URL=
+REACT_APP_SUPABASE_ANON_KEY=
+```
+
+The deployed backend URL is currently hardcoded as `https://driftwatch-backend.onrender.com` in `src/App.js` (`SCAN_API`) and `src/MonitorsPage.js` (`API`). To use a local backend, change both to `http://localhost:8000`, then run `npm start` (http://localhost:3000).
+
+### Tests
+
+```bash
+cd backend
+pip install -r requirements-dev.txt
+pytest
+```
+
+Supabase, Gemini and Brevo are mocked, so the tests need no secrets or network. They cover the detectors, API validation and auth enforcement, alert and scheduler behaviour, and abuse protection. `benchmarks/` contains scripts that measure detection rate, false-alarm rate and scale; they are not part of CI.
+
+## Known limitations
+
+- **Row order matters.** The last row is treated as "today". Unsorted data gives wrong results.
+- **Scheduler runs inside the API process.** With multiple instances, each would run every job. A real deployment would use a task queue or a managed cron service.
+- **Gemini is on the request path.** `/scan` waits for explanations, so latency grows with the number of flagged columns. Detection still works if Gemini fails, only the explanation is missing.
+- **Monitors accept Google Sheets only in the UI.** The backend also understands a `csv_path` source type that reads a file from the server, with no validation on the create route. Restrict it to `google_sheet` before exposing the API to untrusted users.
+- **Alert emails link to `/unsubscribe`**, but the frontend has no such page yet.
+- **Free-tier cold starts** on Render add delay to the first request.
+
+## Project structure
+
+```
+driftwatch/
+├── backend/
+│   ├── main.py             FastAPI app and routes, rate limiting, upload handling
+│   ├── detector.py         z-score, chi-square, Isolation Forest, Gemini explanations
+│   ├── scheduler.py        APScheduler jobs, Google Sheet fetch, run_monitor, scan history
+│   ├── monitors.py         Supabase CRUD for monitors
+│   ├── alerts.py           Brevo email alerts
+│   ├── auth.py             JWT verification via Supabase
+│   ├── supabase_client.py  anon and service-role clients
+│   ├── render.yaml         Render service definition
+│   ├── tests/              pytest suite
+│   └── benchmarks/         detection and scale benchmarks
+├── frontend/src/
+│   ├── App.js              landing page, embedded scan tool, health score
+│   ├── ScanPage.js         standalone scan page
+│   ├── MonitorsPage.js     monitor dashboard, history, trends
+│   ├── AuthModal.js        login / signup / Google OAuth
+│   └── supabaseClient.js
+├── docs/architecture-map.html   interactive architecture map
+└── .github/workflows/tests.yml
+```
