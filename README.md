@@ -454,7 +454,7 @@ date,daily_sales,orders,returns
 
 ## Architecture
 
-Every box and arrow below comes from the code. For an animated version with node tracing, a guided walkthrough and export options, open [`docs/architecture-map.html`](docs/architecture-map.html) in a browser.
+Every box and arrow below comes from the code. For an animated version with node tracing, a guided walkthrough and export options, open [`architecture-live`](https://driftwatch-arc.netlify.app/) in a browser.
 
 ```mermaid
 flowchart LR
