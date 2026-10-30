@@ -5,3 +5,7 @@ service_account.json
 venv/
 .venv/
 .vscode
+data/temp_*
+data/monitors.json
+.pytest_cache/
+.coverage
