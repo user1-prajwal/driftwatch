@@ -9,6 +9,7 @@ import os
 load_dotenv()
 client       = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 GEMINI_MODEL = "gemini-2.5-flash"
+IF_MAX_TRAIN_ROWS = 50_000
 
 SENSITIVITY_MAP = {
     "low":    {"warning": 3.0, "critical": 5.0, "if_contamination": 0.05},
@@ -30,23 +31,31 @@ def load_data(filepath):
 def clean_numeric(df, date_column):
     """
     Converts text numbers to real numbers.
-    Handles: "45,000" → 45000, "₹1,000" → 1000
+    Handles: "45,000" -> 45000, "₹1,000" -> 1000
     This fixes the issue where Google Sheets
     stores numbers with commas as text.
+
+    Performance: columns that are already numeric are skipped, the symbols are
+    stripped with a single regex pass, and obviously-text columns (like a
+    status column) are rejected using a small sample before any full-column work.
     """
     for col in df.columns:
         if col == date_column:
             continue
-        # Try to convert to numeric after cleaning
-        cleaned = (
-            df[col].astype(str)
-            .str.replace(",", "", regex=False)
-            .str.replace("₹", "", regex=False)
-            .str.replace("$", "", regex=False)
-            .str.replace("%", "", regex=False)
-            .str.strip()
-        )
-        converted = pd.to_numeric(cleaned, errors="coerce")
+        if pd.api.types.is_numeric_dtype(df[col]):
+            continue                      # already numbers, nothing to clean
+
+        def to_number(series):
+            cleaned = series.astype(str).str.replace(r"[,₹$%]", "", regex=True).str.strip()
+            return pd.to_numeric(cleaned, errors="coerce")
+
+        # Cheap pre-check on ~1000 evenly spaced values: a column that is
+        # clearly text should not pay for a full-column conversion.
+        step = max(1, len(df) // 1000)
+        if to_number(df[col].iloc[::step]).notna().mean() < 0.2:
+            continue
+
+        converted = to_number(df[col])
         # Only replace if more than 50% converted successfully
         if converted.notna().mean() > 0.5:
             df[col] = converted
@@ -86,10 +95,15 @@ def check_numeric_column(df, column, thresholds):
     history     = df[column][:-1].dropna()
     today_value = df[column].iloc[-1]
 
+    # Need at least 2 historical values for a standard deviation,
+    # and a real value for today (a blank cell is not a measurement).
+    if len(history) < 2 or pd.isna(today_value):
+        return None
+
     mean = round(float(history.mean()), 2)
     std  = round(float(history.std()), 2)
 
-    if std == 0:
+    if std == 0 or np.isnan(std):
         return None
 
     z_score  = round((today_value - mean) / std, 2)
@@ -124,16 +138,24 @@ def check_category_column(df, date_column, category_column, thresholds):
             p_thresholds = val
             break
 
-    dates      = sorted(df[date_column].unique())
+    dates = sorted(df[date_column].dropna().unique())
+    if len(dates) < 2:
+        return None          # no history to compare against
+
     past_dates = dates[:-1]
     today_date = dates[-1]
 
     history_df = df[df[date_column].isin(past_dates)]
     today_df   = df[df[date_column] == today_date]
 
-    all_cats       = df[category_column].unique().tolist()
+    all_cats       = df[category_column].dropna().unique().tolist()
+    if len(all_cats) < 2:
+        return None          # a constant column cannot shift
     history_counts = history_df[category_column].value_counts().reindex(all_cats, fill_value=0)
     today_counts   = today_df[category_column].value_counts().reindex(all_cats, fill_value=0)
+
+    if history_counts.sum() == 0 or today_counts.sum() == 0:
+        return None
 
     baseline_pct = (history_counts / history_counts.sum() * 100).round(2)
     today_pct    = (today_counts / today_counts.sum() * 100).round(2)
@@ -197,6 +219,12 @@ def check_isolation_forest(df, date_column, thresholds, monitor_columns=None):
 
     if len(history_df) < 10:
         return None
+
+    # Each tree only ever sees 256 rows (scikit-learn's max_samples default),
+    # so training on a random sample of very large histories gives the same
+    # kind of model at a fraction of the cost and memory.
+    if len(history_df) > IF_MAX_TRAIN_ROWS:
+        history_df = history_df.sample(IF_MAX_TRAIN_ROWS, random_state=42)
 
     clf = IsolationForest(
         contamination = thresholds["if_contamination"],
