@@ -4,8 +4,10 @@ import shutil
 from datetime import datetime
 
 import pandas as pd
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from detector import run_driftwatch
 from alerts import send_email_alert
@@ -22,6 +24,54 @@ from scheduler import (
     remove_monitor_from_scheduler
 )
 
+# ── Abuse protection for the PUBLIC endpoints ─────────────────────
+# /scan and /columns need no login and /scan calls Gemini, so they are the
+# endpoints an anonymous visitor could use to burn quota or exhaust memory.
+MAX_UPLOAD_MB    = int(os.getenv("MAX_UPLOAD_MB", "50"))
+RATE_LIMIT_SCAN  = os.getenv("RATE_LIMIT_SCAN", "10/minute")
+RATE_LIMIT_COLS  = os.getenv("RATE_LIMIT_COLUMNS", "30/minute")
+
+
+def client_ip(request: Request) -> str:
+    """Render sits behind a proxy, so the real client is in X-Forwarded-For."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+limiter = Limiter(key_func=client_ip)
+
+
+def save_upload(file: UploadFile, prefix: str) -> str:
+    """
+    Stream an upload to data/ under a server-generated name and enforce a size
+    cap. The client's filename is NEVER used in the path (it could contain
+    '../' and write outside data/).
+    """
+    path  = f"data/{prefix}_{uuid.uuid4().hex}.csv"
+    limit = MAX_UPLOAD_MB * 1024 * 1024
+    size  = 0
+    try:
+        with open(path, "wb") as buffer:
+            while True:
+                chunk = file.file.read(1024 * 1024)
+                if not chunk:
+                    break
+                size += len(chunk)
+                if size > limit:
+                    raise HTTPException(
+                        status_code=413,
+                        detail=f"File too large. Maximum size is {MAX_UPLOAD_MB} MB.",
+                    )
+                buffer.write(chunk)
+    except Exception:
+        if os.path.exists(path):
+            os.remove(path)
+        raise
+    return path
+
+
 # Create FastAPI app
 
 app = FastAPI(
@@ -29,6 +79,9 @@ app = FastAPI(
     description="AI-powered data quality monitor",
     version="3.0.0"
 )
+
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,7 +116,9 @@ def health_check():
 # ROUTE 2 — One-time scan (NO auth required)
 # Completely stateless — results not saved
 @app.post("/scan")
+@limiter.limit(RATE_LIMIT_SCAN)
 async def scan_file(
+    request:     Request,
     file:        UploadFile = File(...),
     date_column: str        = Form(...),
     context:     str        = Form(...),
@@ -83,9 +138,7 @@ async def scan_file(
     if sensitivity not in ["low", "medium", "high"]:
         raise HTTPException(status_code=400, detail="sensitivity must be low/medium/high.")
  
-    temp_path = f"data/temp_{uuid.uuid4().hex[:8]}_{file.filename}"
-    with open(temp_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    temp_path = save_upload(file, "temp")
  
     try:
         # Parse comma-separated column names
@@ -134,13 +187,12 @@ async def scan_file(
 # ROUTE 3 — List columns in a CSV
 
 @app.post("/columns")
-async def get_columns(file: UploadFile = File(...)):
+@limiter.limit(RATE_LIMIT_COLS)
+async def get_columns(request: Request, file: UploadFile = File(...)):
     if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files supported.")
 
-    temp_path = f"data/temp_cols_{file.filename}"
-    with open(temp_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    temp_path = save_upload(file, "temp_cols")
 
     try:
         df = pd.read_csv(temp_path)
