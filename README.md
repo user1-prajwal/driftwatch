@@ -394,7 +394,7 @@ driftwatch/
 
 Detect unusual changes in tabular data and get a plain-English explanation of what changed. Upload a CSV for a one-off scan, or connect a Google Sheet and let DriftWatch check it on a schedule and email you when something looks wrong.
 
-[Live demo](https://driftwatchai.vercel.app/) · [Backend API docs](https://driftwatch-backend.onrender.com/docs) · [Interactive architecture map](docs/architecture-map.html)
+[Live demo](https://driftwatchai.vercel.app/) · [Interactive architecture map](https://driftwatch-arc.netlify.app/)
 
 > The backend runs on Render's free tier, so the first request after a period of inactivity can take about 30 seconds.
 
